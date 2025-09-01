@@ -1,0 +1,18 @@
+🔥 Prompt sugerido
+
+Prompt
+Tengo un hook useProgressbarAnimation en React que anima un progressbar de pasos usando clases CSS (active, completed, fill-step, unfill-step). Actualmente compara prevStep vs activeStep para decidir si se avanza o retrocede, pero no soporta un flujo circular (infinite-loop).
+
+1.Quiero que lo reescribas con estas condiciones:
+
+2.El hook debe aceptar un parámetro stepsCount para calcular la dirección circular mínima.
+
+3.Si paso de lastStep → 0, debe interpretarse como un avance circular, no retroceso.
+
+4.Si paso de 0 → lastStep, debe interpretarse como un retroceso circular, no avance.
+
+5.Toda la lógica imperativa de clases (fill-step, unfill-step, etc.) debe quedar encapsulada dentro del hook.
+
+6.El hook debe ser escalable (funciona con cualquier número de pasos) y mantener las animaciones fluidas.
+
+Dame el código completo del hook y explica cómo manejas la aritmética modular para calcular la distancia mínima en un anillo circular.
