@@ -1,119 +1,154 @@
 // Step3.jsx
-export function Step3() {
+import { useState } from 'react';
+
+const baseOrden = {
+  tipo: 'mantenimiento',
+  fechaIngreso: '',
+  diagnostico: 'Equipo enciende pero se apaga solo',
+  observaciones: 'Cliente indicó que el problema empezó hace 2 días',
+  nombreTrabajo: 'Mantenimiento general',
+  cantidad: '1',
+  precioUnitario: '150',
+  total: '150',
+};
+
+const fieldTypes = {
+  tipo: 'text',
+  fechaIngreso: 'datetime-local',
+  diagnostico: 'textarea',
+  observaciones: 'textarea',
+  nombreTrabajo: 'text',
+  cantidad: 'number',
+  precioUnitario: 'number',
+  total: 'number',
+};
+
+// 👇 Layout para organizar campos
+const fieldLayout = {
+  nombreTrabajo: { grid: '3fr', group: 'trabajo' },
+  cantidad: { grid: '1fr', group: 'trabajo' },
+  precioUnitario: { grid: '1fr', group: 'costos' },
+  total: { grid: '1fr', group: 'costos' },
+};
+
+export function Step3({ values = {}, onChange }) {
+  const [orden, setOrden] = useState(
+    Object.fromEntries(Object.keys(baseOrden).map((k) => [k, values[k] ?? '']))
+  );
+
+  const handleChange = (field, value) => {
+    const updated = { ...orden, [field]: value };
+
+    if (field === 'cantidad' || field === 'precioUnitario') {
+      const cantidad = parseFloat(updated.cantidad || 0);
+      const precio = parseFloat(updated.precioUnitario || 0);
+      updated.total = (cantidad * precio).toFixed(2);
+    }
+
+    setOrden(updated);
+    if (onChange) onChange(updated);
+  };
+
+  // 👉 agrupamos campos según "group"
+  const normalFields = Object.keys(baseOrden).filter((f) => !fieldLayout[f]);
+  const groupedBy = (group) =>
+    Object.entries(fieldLayout).filter(([_, v]) => v.group === group);
+
   return (
     <>
-      <label htmlFor="tipo" className="sr-only">
-        Tipo de orden
-      </label>
-      <input
-        id="tipo"
-        name="tipo"
-        placeholder="mantenimiento"
-        style={{ width: '100%' }}
-      />
+      {/* Campos normales */}
+      {normalFields.map((field) => (
+        <div key={field}>
+          <label htmlFor={field} className="sr-only">
+            {field}
+          </label>
+          {fieldTypes[field] === 'textarea' ? (
+            <textarea
+              id={field}
+              name={field}
+              placeholder={baseOrden[field]}
+              value={orden[field]}
+              onChange={(e) => handleChange(field, e.target.value)}
+              style={{ width: '100%', minHeight: '80px' }}
+            />
+          ) : (
+            <input
+              id={field}
+              name={field}
+              type={fieldTypes[field] || 'text'}
+              placeholder={baseOrden[field]}
+              value={orden[field]}
+              onChange={(e) => handleChange(field, e.target.value)}
+              style={{ width: '100%' }}
+            />
+          )}
+        </div>
+      ))}
 
-      <label htmlFor="fechaIngreso" className="sr-only">
-        Fecha de ingreso
-      </label>
-      <input
-        id="fechaIngreso"
-        name="fechaIngreso"
-        type="datetime-local"
-        style={{ width: '100%' }}
-      />
-
-      <label htmlFor="diagnostico" className="sr-only">
-        Diagnóstico
-      </label>
-      <textarea
-        id="diagnostico"
-        name="diagnostico"
-        placeholder="Equipo enciende pero se apaga solo"
-        style={{ width: '100%', minHeight: '80px' }}
-      />
-
-      <label htmlFor="observaciones" className="sr-only">
-        Observaciones
-      </label>
-      <textarea
-        id="observaciones"
-        name="observaciones"
-        placeholder="Cliente indicó que el problema empezó hace 2 días"
-        style={{ width: '100%', minHeight: '80px' }}
-      />
-
-      {/* Grid para los 4 campos de trabajo */}
-
+      {/* Grupo: trabajo */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '3fr 1fr',
+          gridTemplateColumns: groupedBy('trabajo')
+            .map(([_, v]) => v.grid)
+            .join(' '),
           gap: '0.5rem',
         }}
       >
-        <div>
-          <label htmlFor="nombreTrabajo" className="sr-only">
-            Nombre del trabajo
-          </label>
-          <input
-            id="nombreTrabajo"
-            name="nombreTrabajo"
-            placeholder="Mantenimiento general"
-            style={{ width: '100%' }}
-          />
-        </div>
-        <div>
-          <label htmlFor="cantidad" className="sr-only">
-            Cantidad
-          </label>
-          <input
-            id="cantidad"
-            name="cantidad"
-            type="number"
-            min="1"
-            placeholder="1"
-            style={{ width: '100%' }}
-          />
-        </div>
+        {groupedBy('trabajo').map(([field]) => (
+          <div key={field}>
+            <label htmlFor={field} className="sr-only">
+              {field}
+            </label>
+            <input
+              id={field}
+              name={field}
+              type={fieldTypes[field] || 'text'}
+              placeholder={baseOrden[field]}
+              value={orden[field]}
+              onChange={(e) => handleChange(field, e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+        ))}
       </div>
+
+      {/* Grupo: costos */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          gridTemplateColumns: groupedBy('costos')
+            .map(([_, v]) => v.grid)
+            .join(' '),
           gap: '0.5rem',
         }}
       >
-        <div>
-          <label htmlFor="precioUnitario" className="sr-only">
-            Precio unitario
-          </label>
-          <input
-            id="precioUnitario"
-            name="precioUnitario"
-            type="number"
-            step="0.01"
-            placeholder="150"
-            style={{ width: '100%' }}
-          />
-        </div>
-
-        <label htmlFor="total" className="sr-only">
-          Total
-        </label>
-        <input
-          id="total"
-          name="total"
-          type="number"
-          step="0.01"
-          placeholder="150"
-          readOnly
-          style={{
-            width: '100%',
-            fontWeight: 'bold',
-            textAlign: 'right',
-            background: '#f9f9f9',
-          }}
-        />
+        {groupedBy('costos').map(([field]) => (
+          <div key={field}>
+            <label htmlFor={field} className="sr-only">
+              {field}
+            </label>
+            <input
+              id={field}
+              name={field}
+              type={fieldTypes[field] || 'text'}
+              placeholder={baseOrden[field]}
+              value={orden[field]}
+              onChange={(e) => handleChange(field, e.target.value)}
+              readOnly={field === 'total'}
+              style={{
+                width: '100%',
+                ...(field === 'total'
+                  ? {
+                      fontWeight: 'bold',
+                      textAlign: 'right',
+                      background: '#f9f9f9',
+                    }
+                  : {}),
+              }}
+            />
+          </div>
+        ))}
       </div>
     </>
   );

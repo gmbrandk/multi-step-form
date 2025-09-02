@@ -45,6 +45,12 @@ body {
   transition: height 0.4s ease; /* 👈 suaviza cambios de altura */
 }
 
+.msform input[type='checkbox'],
+.msform input[type='radio'] {
+  width: auto; /* que ocupen solo lo que necesitan */
+  margin: 0; /* reset de márgenes para mejor alineación */
+}
+
 .msform fieldset {
   background: white;
   border: 0 none;
@@ -104,4 +110,18 @@ body {
   font-size: 13px;
   color: #666;
   margin-bottom: 20px;
+}
+
+.fs-subtitle.inline label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fs-subtitle.inline label input {
+  flex: 0 0 auto; /* el checkbox no se estira */
+}
+
+.fs-subtitle.inline label span {
+  flex: 0 0 auto; /* el texto tampoco se estira */
 }

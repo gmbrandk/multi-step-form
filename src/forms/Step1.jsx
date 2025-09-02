@@ -1,40 +1,42 @@
-// Step1.jsx
-export function Step1() {
+import { useState } from 'react';
+
+const baseCliente = {
+  nombres: 'Ej: Adriana Josefina',
+  apellidos: 'Ej: Tudela Gutiérrez',
+  dni: 'Ej: 45591954',
+  telefono: 'Ej: 913458768',
+  email: 'Ej: ejemplo@correo.com',
+  direccion: 'Ej: Av. Siempre Viva 742',
+};
+
+export function Step1({ onChange }) {
+  const [cliente, setCliente] = useState(
+    Object.fromEntries(Object.keys(baseCliente).map((k) => [k, '']))
+  );
+
+  const handleChange = (field, value) => {
+    const updated = { ...cliente, [field]: value };
+    setCliente(updated);
+    if (onChange) onChange(updated);
+  };
+
   return (
     <>
-      <label htmlFor="nombres" className="sr-only">
-        Nombres
-      </label>
-      <input id="nombres" name="nombres" placeholder="Adriana Josefina" />
-
-      <label htmlFor="apellidos" className="sr-only">
-        Apellidos
-      </label>
-      <input id="apellidos" name="apellidos" placeholder="Tudela Gutiérrez" />
-
-      <label htmlFor="dni" className="sr-only">
-        DNI
-      </label>
-      <input id="dni" name="dni" placeholder="45591954" />
-
-      <label htmlFor="telefono" className="sr-only">
-        Teléfono
-      </label>
-      <input id="telefono" name="telefono" placeholder="913458768" />
-
-      <label htmlFor="email" className="sr-only">
-        Email
-      </label>
-      <input id="email" name="email" placeholder="ejemplo@correo.com" />
-
-      <label htmlFor="direccion" className="sr-only">
-        Dirección
-      </label>
-      <input
-        id="direccion"
-        name="direccion"
-        placeholder="Av. Siempre Viva 742"
-      />
+      {Object.keys(baseCliente).map((field) => (
+        <div key={field}>
+          <label htmlFor={field} className="sr-only">
+            {field}
+          </label>
+          <input
+            id={field}
+            name={field}
+            placeholder={baseCliente[field]}
+            value={cliente[field]}
+            onChange={(e) => handleChange(field, e.target.value)}
+            style={{ width: '100%' }}
+          />
+        </div>
+      ))}
     </>
   );
 }
