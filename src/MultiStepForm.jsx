@@ -2,9 +2,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import './MultiStepForm.css';
 import { ProgressBar } from './Progressbar';
-import { useFramerStepAnimation } from './useFramerStepAnimation';
-
 import { getSteps } from './stepsConfig';
+import { useFramerStepAnimation } from './useFramerStepAnimation';
 
 // 🔹 helper para logs JSON bonitos
 const logJson = (label, data) => {
@@ -26,11 +25,6 @@ const simulateRequest = async (endpoint, body) => {
   });
 };
 
-/**
- * MultiStepForm dinámico
- * @param {Object} props
- * @param {Array} props.steps - Configuración de pasos [{id, title, subtitle, Component}]
- */
 export default function MultiStepForm() {
   const [step, setStep] = useState(0);
   const [prevDirection, setPrevDirection] = useState(0);
@@ -43,36 +37,22 @@ export default function MultiStepForm() {
   const fieldsetRef = useRef(null);
   const formRef = useRef(null);
 
-  // 🔹 cada render los steps se recalculan según formData
+  // 🔹 recalculamos steps cada vez que cambia formData
   const steps = getSteps(formData);
+  const visibleSteps = steps.filter((s) => !s.hidden);
 
   // focus automático en el primer input
   useEffect(() => {
     if (fieldsetRef.current) {
-      const firstInput = fieldsetRef.current.querySelector('input, textarea');
+      const firstInput = fieldsetRef.current.querySelector(
+        'input, textarea, select'
+      );
       if (firstInput) firstInput.focus();
     }
   }, [step]);
 
-  // animar altura del form
-  useEffect(() => {
-    const formEl = formRef.current;
-    if (!formEl) return;
-
-    const activeFieldset = formEl.querySelector('fieldset');
-    if (!activeFieldset) return;
-
-    const to = activeFieldset.scrollHeight;
-    const prefersReduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    formEl.style.height = prefersReduced ? `${to}px` : `${to}px`;
-  }, [step]);
-
   const goToStep = (newStep, direction) => {
-    const target = Math.min(Math.max(newStep, 0), steps.length - 1);
+    const target = Math.min(Math.max(newStep, 0), visibleSteps.length - 1);
 
     if (isAnimating) {
       setPendingStep({ step: target, dir: direction });
@@ -94,7 +74,7 @@ export default function MultiStepForm() {
   };
 
   const handleNext = async () => {
-    const currentStep = steps[step];
+    const currentStep = visibleSteps[step];
     const data = formData[currentStep.id] || {};
 
     if (currentStep.id === 'cliente') {
@@ -103,7 +83,6 @@ export default function MultiStepForm() {
     }
 
     if (currentStep.id === 'ficha-tecnica') {
-      // 🔹 combinamos equipo + ficha tecnica
       const equipoData = formData['equipo'] || {};
       const fichaData = data;
 
@@ -128,36 +107,27 @@ export default function MultiStepForm() {
     goToStep(step + 1, 1);
   };
 
-  const goPrev = () => goToStep(step - 1, -1);
+  const goPrev = () => {
+    goToStep(step - 1, -1);
+  };
 
   const variants = useFramerStepAnimation({
     durations: { step: 0.8 },
     debug: false,
   });
 
-  const CurrentStep = steps[step]?.Component ?? (() => <p>No hay pasos</p>);
+  const CurrentStep =
+    visibleSteps[step]?.Component ?? (() => <p>No hay pasos</p>);
 
   return (
     <div className="form-wrapper">
-      <ProgressBar step={step} labels={steps.map((s) => s.title)} />
+      <ProgressBar step={step} labels={visibleSteps.map((s) => s.title)} />
 
       <motion.form
         className="msform"
         ref={formRef}
-        layout
         transition={{ duration: 0.6, ease: 'easeInOut' }}
         onSubmit={(e) => e.preventDefault()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            if (e.shiftKey) {
-              goPrev();
-            } else if (step < steps.length - 1) {
-              handleNext();
-            } else {
-              logJson('Form submitted!', { ...formData, ids });
-            }
-          }
-        }}
       >
         <AnimatePresence mode="sync" initial={false} custom={prevDirection}>
           <motion.fieldset
@@ -168,17 +138,30 @@ export default function MultiStepForm() {
             initial="enter"
             animate="center"
             exit="exit"
-            layout
+            layout="position"
           >
-            <legend className="sr-only">{steps[step]?.title}</legend>
-            <h2 className="fs-title">{steps[step]?.title}</h2>
-            <h3 className="fs-subtitle">{steps[step]?.subtitle}</h3>
+            <legend className="sr-only">{visibleSteps[step]?.title}</legend>
+            <h2 className="fs-title">{visibleSteps[step]?.title}</h2>
+            <h3 className="fs-subtitle">{visibleSteps[step]?.subtitle}</h3>
 
             <CurrentStep
-              values={formData[steps[step].id] || {}}
-              onChange={(vals) =>
-                setFormData((prev) => ({ ...prev, [steps[step].id]: vals }))
-              }
+              values={formData[visibleSteps[step].id] || {}}
+              onChange={(name, value) => {
+                console.log('📥 MultiStepForm.onChange:', {
+                  id: visibleSteps[step].id,
+                  name,
+                  value,
+                  type: typeof name,
+                });
+                setFormData((prev) => ({
+                  ...prev,
+                  [visibleSteps[step].id]: {
+                    ...prev[visibleSteps[step].id],
+                    [name]: value,
+                  },
+                }));
+              }}
+              fields={visibleSteps[step].fields || []}
             />
 
             <div>
@@ -192,7 +175,7 @@ export default function MultiStepForm() {
                   Previous
                 </button>
               )}
-              {step < steps.length - 1 ? (
+              {step < visibleSteps.length - 1 ? (
                 <button
                   type="button"
                   className="next action-button"
@@ -206,26 +189,15 @@ export default function MultiStepForm() {
                   type="submit"
                   className="submit action-button"
                   onClick={async () => {
-                    // 🔹 mapeamos el formData + ids al payload final requerido
+                    const lineasServicio = formData['linea-extra']
+                      ? [formData['linea-extra']]
+                      : [];
+
                     const finalPayload = {
-                      representanteId: ids.clienteId, // viene del paso cliente
-                      equipoId: ids.equipoId, // viene del paso equipo (ya con ficha)
-                      lineasServicio: [
-                        {
-                          tipoTrabajo: '68afd6a2c19b8c72a13decb0', // ⚡️ ojo: este id debe venir de un select real en tu Step4
-                          nombreTrabajo:
-                            formData['orden-servicio']?.nombreTrabajo || '',
-                          descripcion:
-                            formData['orden-servicio']?.diagnostico || '',
-                          precioUnitario: Number(
-                            formData['orden-servicio']?.precioUnitario || 0
-                          ),
-                          cantidad: Number(
-                            formData['orden-servicio']?.cantidad || 1
-                          ),
-                        },
-                      ],
-                      tecnico: '681b7df58ea5aadc2aa6f420', // ⚡️ igual: debería salir de un select en el formulario
+                      representanteId: ids.clienteId,
+                      equipoId: ids.equipoId,
+                      lineasServicio,
+                      tecnico: '681b7df58ea5aadc2aa6f420',
                       total: Number(formData['orden-servicio']?.total || 0),
                       fechaIngreso:
                         formData['orden-servicio']?.fechaIngreso ||
@@ -236,12 +208,10 @@ export default function MultiStepForm() {
                         formData['orden-servicio']?.observaciones || '',
                     };
 
-                    // 🔹 enviamos a nuestro simulateRequest (como si fuera el backend real)
                     await simulateRequest(
                       '/ordenes-servicio/final',
                       finalPayload
                     );
-
                     logJson('✅ Payload final listo para enviar', finalPayload);
                   }}
                 >

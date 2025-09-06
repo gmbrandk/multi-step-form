@@ -9,15 +9,19 @@ const baseCliente = {
   direccion: 'Ej: Av. Siempre Viva 742',
 };
 
-export function Step1({ onChange }) {
-  const [cliente, setCliente] = useState(
-    Object.fromEntries(Object.keys(baseCliente).map((k) => [k, '']))
-  );
+export function Step1({ values = {}, onChange }) {
+  const [cliente, setCliente] = useState({
+    ...Object.fromEntries(Object.keys(baseCliente).map((k) => [k, ''])),
+    ...values,
+  });
 
   const handleChange = (field, value) => {
     const updated = { ...cliente, [field]: value };
     setCliente(updated);
-    if (onChange) onChange(updated);
+    if (onChange) {
+      // ✅ ahora pasamos el nombre del campo + valor
+      onChange(field, value);
+    }
   };
 
   return (

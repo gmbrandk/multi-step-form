@@ -9,22 +9,28 @@ const baseEquipo = {
   nroSerie: 'Ej: 3BO52134Q',
 };
 
-export function Step2({ onChange }) {
-  const [equipo, setEquipo] = useState(
-    Object.fromEntries(Object.keys(baseEquipo).map((k) => [k, '']))
-  );
-  const [especificaciones, setEspecificaciones] = useState(false); // ✅ solo frontend
+export function Step2({ values = {}, onChange }) {
+  const [equipo, setEquipo] = useState({
+    ...Object.fromEntries(Object.keys(baseEquipo).map((k) => [k, ''])),
+    ...values,
+  });
 
   const handleChange = (field, value) => {
     const updated = { ...equipo, [field]: value };
     setEquipo(updated);
-    if (onChange) onChange({ ...updated, especificaciones }); // subimos flag
+    if (onChange) {
+      // ✅ mandamos solo el campo cambiado
+      onChange(field, value);
+    }
   };
 
   const handleCheckbox = (e) => {
     const checked = e.target.checked;
-    setEspecificaciones(checked);
-    if (onChange) onChange({ ...equipo, especificaciones: checked });
+    setEquipo((prev) => ({ ...prev, especificaciones: checked }));
+    if (onChange) {
+      // ✅ subimos el flag como campo individual
+      onChange('especificaciones', checked);
+    }
   };
 
   return (
@@ -45,11 +51,18 @@ export function Step2({ onChange }) {
         </div>
       ))}
 
-      <div className="fs-subtitle inline" style={{ marginTop: '1rem' }}>
+      <div
+        className="fs-subtitle inline"
+        style={{
+          marginTop: '1rem',
+          justifySelf: 'center',
+          alignSelf: 'center',
+        }}
+      >
         <label>
           <input
             type="checkbox"
-            checked={especificaciones}
+            checked={!!equipo.especificaciones}
             onChange={handleCheckbox}
           />
           <span>Agregar especificaciones de equipo</span>

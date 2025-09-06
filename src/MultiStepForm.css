@@ -33,7 +33,16 @@ body {
 .form-wrapper {
   width: 400px;
   margin: 50px auto;
-  position: relative;
+  position: relative; /* contexto para posicionar */
+  padding-top: 60px; /* deja espacio para que el form no se tape */
+}
+
+.progressbar {
+  position: absolute;
+  top: 10px; /* siempre fija a 10px dentro de .form-wrapper */
+  left: 0;
+  right: 0;
+  z-index: 10;
 }
 
 .msform {
@@ -66,7 +75,8 @@ body {
 /* Inputs */
 .msform input,
 .msform textarea,
-.msform select {
+.msform select,
+.msform output {
   padding: 15px;
   border: 1px solid #ccc;
   border-radius: 3px;
@@ -115,8 +125,10 @@ body {
 
 .fs-subtitle.inline label {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 6px;
+  column-gap: 6px;
+  margin: 0;
 }
 
 .fs-subtitle.inline label input {

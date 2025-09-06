@@ -1,16 +1,27 @@
-import { StepLineaServicio } from './StepLineaServicio';
+import { useLineaServicio } from '../useLineaServicio';
+import { SchemaForm } from './SchemaForm';
 
 export function Step3({ values = {}, onChange }) {
+  const { linea, handleChange } = useLineaServicio(values, onChange);
+
   return (
-    <StepLineaServicio
-      values={values}
-      onChange={onChange}
+    <SchemaForm
+      values={linea}
+      onChange={handleChange}
+      showDescriptions={false} // 🔕 oculta todas las descripciones
+      readOnly={false} // 🔒 bloquea el formulario
       fields={[
         {
           name: 'categoria',
           type: 'select',
           label: { name: 'Categoría', className: 'sr-only' },
           gridColumn: '1 / 4',
+          defaultValue: 'servicio', // 👈 opcional, valor inicial
+          options: [
+            { value: 'servicio', label: 'Servicios' },
+            { value: 'producto', label: 'Productos' },
+          ],
+          description: 'Selecciona si corresponde a un servicio o un producto',
         },
         {
           name: 'nombreTrabajo',
@@ -40,25 +51,31 @@ export function Step3({ values = {}, onChange }) {
           name: 'cantidad',
           type: 'number',
           label: { name: 'Cantidad', className: 'sr-only' },
-          gridColumn: '1 / 2', // 👈 columna 1
+          gridColumn: '1 / 2',
         },
         {
           name: 'precioUnitario',
           type: 'number',
           label: { name: 'Precio unitario', className: 'sr-only' },
-          gridColumn: '2 / 3', // 👈 columna 2
+          gridColumn: '2 / 3',
         },
         {
           name: 'total',
-          type: 'number',
+          type: 'output',
           label: { name: 'Total', className: 'sr-only' },
-          gridColumn: '3 / 4', // 👈 columna 3
+          gridColumn: '3 / 4',
         },
         {
           name: 'crearLinea',
           type: 'checkbox',
-          label: { name: 'Crear nueva línea de Servicio', className: '' },
+          label: {
+            name: 'Crear nueva línea de Servicio',
+            className: 'fs-subtitle inline',
+          },
           gridColumn: '1 / 4',
+          defaultValue: false, // arranca desmarcado
+          description:
+            'Marca esta casilla si deseas agregar otra línea de servicio',
         },
       ]}
     />

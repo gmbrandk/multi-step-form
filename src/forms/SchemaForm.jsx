@@ -1,76 +1,98 @@
 import { baseOrden } from '../constantes';
 
-export function StepLineaServicio({ values = {}, onChange, fields = [] }) {
+export function SchemaForm({
+  values = {},
+  onChange,
+  fields = [],
+  showDescriptions = true, // ✅ controla descripción global
+  readOnly = false, // ✅ modo solo lectura
+}) {
   if (!fields.length) return null;
-
-  const gridTemplate =
-    values.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: gridTemplate,
+        gridTemplateColumns: 'repeat(3, 1fr)',
       }}
     >
-      {fields.map(({ name, type, label, gridColumn }) => {
-        if (name === 'cantidad' && values.categoria === 'servicio') return null;
+      {fields.map((field) => {
+        const {
+          name,
+          type,
+          label,
+          gridColumn,
+          options,
+          description,
+          defaultValue,
+        } = field;
 
-        let column = gridColumn;
-        if (values.categoria === 'servicio') {
-          if (name === 'precioUnitario') column = '1 / 2';
-          if (name === 'total') column = '2 / 3';
-        }
+        const value =
+          values[name] ?? defaultValue ?? (type === 'checkbox' ? false : '');
 
-        // checkbox
+        // 📌 Render checkbox
         if (type === 'checkbox') {
-          const col = column || '1 / -1';
+          const col = gridColumn || '1 / -1';
           return (
             <div
               key={name}
               style={{ gridColumn: col }}
               className="fs-subtitle inline"
             >
-              <label htmlFor={name}>
+              <label htmlFor={name} className={label?.className || ''}>
                 <input
+                  type="checkbox"
                   id={name}
                   name={name}
-                  type="checkbox"
-                  checked={!!values[name]}
+                  checked={!!value}
+                  disabled={readOnly}
                   onChange={(e) => onChange(name, e.target.checked)}
                 />
                 <span>{label?.name || label}</span>
               </label>
+              {showDescriptions && description && (
+                <small style={{ display: 'block', color: '#555' }}>
+                  {description}
+                </small>
+              )}
             </div>
           );
         }
 
-        // select
+        // 📌 Render select
         if (type === 'select') {
           return (
-            <div key={name} style={{ gridColumn: column }}>
+            <div key={name} style={{ gridColumn }}>
               <label htmlFor={name} className={label?.className || ''}>
                 {label?.name || label}
               </label>
               <select
                 id={name}
                 name={name}
-                value={values[name] || ''}
+                value={value}
+                disabled={readOnly}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%' }}
               >
-                <option value="">Seleccione...</option>
-                <option value="servicio">Servicio</option>
-                <option value="producto">Producto</option>
+                {options?.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
+              {showDescriptions && description && (
+                <small style={{ display: 'block', color: '#555' }}>
+                  {description}
+                </small>
+              )}
             </div>
           );
         }
 
-        // textarea
+        // 📌 Render textarea
         if (type === 'textarea') {
           return (
-            <div key={name} style={{ gridColumn: column }}>
+            <div key={name} style={{ gridColumn }}>
               <label htmlFor={name} className={label?.className || ''}>
                 {label?.name || label}
               </label>
@@ -78,18 +100,23 @@ export function StepLineaServicio({ values = {}, onChange, fields = [] }) {
                 id={name}
                 name={name}
                 placeholder={baseOrden[name]}
-                value={values[name] || ''}
+                value={value}
+                disabled={readOnly}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%', minHeight: '60px' }}
               />
+              {showDescriptions && description && (
+                <small style={{ display: 'block', color: '#555' }}>
+                  {description}
+                </small>
+              )}
             </div>
           );
         }
 
-        // total → output
-        if (name === 'total') {
+        if (type === 'output') {
           return (
-            <div key={name} style={{ gridColumn: column }}>
+            <div key={name} style={{ gridColumn }}>
               <label htmlFor={name} className={label?.className || ''}>
                 {label?.name || label}
               </label>
@@ -110,9 +137,9 @@ export function StepLineaServicio({ values = {}, onChange, fields = [] }) {
           );
         }
 
-        // input genérico
+        // 📌 Render normal input
         return (
-          <div key={name} style={{ gridColumn: column }}>
+          <div key={name} style={{ gridColumn }}>
             <label htmlFor={name} className={label?.className || ''}>
               {label?.name || label}
             </label>
@@ -121,10 +148,16 @@ export function StepLineaServicio({ values = {}, onChange, fields = [] }) {
               name={name}
               type={type || 'text'}
               placeholder={baseOrden[name]}
-              value={values[name] || ''}
+              value={value}
+              disabled={readOnly}
               onChange={(e) => onChange(name, e.target.value)}
               style={{ width: '100%' }}
             />
+            {showDescriptions && description && (
+              <small style={{ display: 'block', color: '#555' }}>
+                {description}
+              </small>
+            )}
           </div>
         );
       })}
