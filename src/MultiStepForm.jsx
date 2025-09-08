@@ -1,16 +1,18 @@
+// MultiStepForm.jsx
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import './MultiStepForm.css';
+import { useOrdenServicioContext } from './OrdenServicioContext';
 import { ProgressBar } from './Progressbar';
 import { getSteps } from './stepsConfig';
 import { useFramerStepAnimation } from './useFramerStepAnimation';
 
-// 🔹 helper para logs JSON bonitos
+// helper para logs JSON bonitos
 const logJson = (label, data) => {
   console.log(`${label}:`, JSON.stringify(data, null, 2));
 };
 
-// 🔹 función para simular requests
+// función para simular requests
 const simulateRequest = async (endpoint, body) => {
   console.log(`📡 Simulación POST ${endpoint}`);
   logJson('Request body', body);
@@ -26,19 +28,19 @@ const simulateRequest = async (endpoint, body) => {
 };
 
 export default function MultiStepForm() {
+  const { orden } = useOrdenServicioContext(); // 👈 ahora TODO viene del contexto
   const [step, setStep] = useState(0);
   const [prevDirection, setPrevDirection] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [pendingStep, setPendingStep] = useState(null);
 
-  const [formData, setFormData] = useState({});
   const [ids, setIds] = useState({});
 
   const fieldsetRef = useRef(null);
   const formRef = useRef(null);
 
-  // 🔹 recalculamos steps cada vez que cambia formData
-  const steps = getSteps(formData);
+  // 🔹 steps vienen del contexto orden
+  const steps = getSteps(orden);
   const visibleSteps = steps.filter((s) => !s.hidden);
 
   // focus automático en el primer input
@@ -75,7 +77,8 @@ export default function MultiStepForm() {
 
   const handleNext = async () => {
     const currentStep = visibleSteps[step];
-    const data = formData[currentStep.id] || {};
+    // aquí en vez de leer formData[currentStep.id], lees directamente de orden
+    const data = orden[currentStep.id] || {};
 
     if (currentStep.id === 'cliente') {
       const res = await simulateRequest('/clientes', data);
@@ -83,7 +86,7 @@ export default function MultiStepForm() {
     }
 
     if (currentStep.id === 'ficha-tecnica') {
-      const equipoData = formData['equipo'] || {};
+      const equipoData = orden['equipo'] || {};
       const fichaData = data;
 
       const res = await simulateRequest('/equipos', {
@@ -144,25 +147,7 @@ export default function MultiStepForm() {
             <h2 className="fs-title">{visibleSteps[step]?.title}</h2>
             <h3 className="fs-subtitle">{visibleSteps[step]?.subtitle}</h3>
 
-            <CurrentStep
-              values={formData[visibleSteps[step].id] || {}}
-              onChange={(name, value) => {
-                console.log('📥 MultiStepForm.onChange:', {
-                  id: visibleSteps[step].id,
-                  name,
-                  value,
-                  type: typeof name,
-                });
-                setFormData((prev) => ({
-                  ...prev,
-                  [visibleSteps[step].id]: {
-                    ...prev[visibleSteps[step].id],
-                    [name]: value,
-                  },
-                }));
-              }}
-              fields={visibleSteps[step].fields || []}
-            />
+            <CurrentStep />
 
             <div>
               {step > 0 && (
@@ -189,23 +174,16 @@ export default function MultiStepForm() {
                   type="submit"
                   className="submit action-button"
                   onClick={async () => {
-                    const lineasServicio = formData['linea-extra']
-                      ? [formData['linea-extra']]
-                      : [];
-
                     const finalPayload = {
                       representanteId: ids.clienteId,
                       equipoId: ids.equipoId,
-                      lineasServicio,
+                      lineasServicio: orden.lineas || [],
                       tecnico: '681b7df58ea5aadc2aa6f420',
-                      total: Number(formData['orden-servicio']?.total || 0),
+                      total: Number(orden.total || 0),
                       fechaIngreso:
-                        formData['orden-servicio']?.fechaIngreso ||
-                        new Date().toISOString(),
-                      diagnosticoCliente:
-                        formData['orden-servicio']?.diagnostico || '',
-                      observaciones:
-                        formData['orden-servicio']?.observaciones || '',
+                        orden.fechaIngreso || new Date().toISOString(),
+                      diagnosticoCliente: orden.diagnostico || '',
+                      observaciones: orden.observaciones || '',
                     };
 
                     await simulateRequest(

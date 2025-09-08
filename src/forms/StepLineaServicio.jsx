@@ -1,133 +1,95 @@
-import { baseOrden } from '../constantes';
+import { SchemaForm } from './SchemaForm';
 
-export function StepLineaServicio({ values = {}, onChange, fields = [] }) {
-  if (!fields.length) return null;
+const fields = [
+  {
+    name: 'categoria',
+    type: 'select',
+    label: { name: 'Categoría', className: 'sr-only' },
+    gridColumn: '1 / 4',
+    options: [
+      { value: 'servicio', label: 'Servicios' },
+      { value: 'producto', label: 'Productos' },
+    ],
+  },
+  {
+    name: 'nombreTrabajo',
+    type: 'text',
+    label: { name: 'Nombre del trabajo', className: 'sr-only' },
+    gridColumn: '1 / 4',
+  },
+  {
+    name: 'cantidad',
+    type: 'number',
+    label: { name: 'Cantidad', className: 'sr-only' },
+    gridColumn: '1 / 2',
+    visibleWhen: (values) => values.categoria === 'producto',
+  },
+  {
+    name: 'precioUnitario',
+    type: 'number',
+    label: { name: 'Precio unitario', className: 'sr-only' },
+    gridColumn: '2 / 3',
+  },
+  {
+    name: 'subTotal',
+    type: 'output',
+    label: { name: 'SubTotal', className: 'sr-only' },
+    gridColumn: '3 / 4',
+  },
+];
 
-  const gridTemplate =
-    values.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
+export function StepLineaServicio({ values = [], onChange }) {
+  const handleLineaChange = (index, field, value) => {
+    const nuevas = [...values];
+    nuevas[index] = { ...nuevas[index], [field]: value };
+
+    // recalculamos subtotal si corresponde
+    if (field === 'cantidad' || field === 'precioUnitario') {
+      const cantidad = Number(nuevas[index].cantidad || 0);
+      const precio = Number(nuevas[index].precioUnitario || 0);
+      nuevas[index].subTotal = cantidad * precio;
+    }
+
+    onChange(nuevas);
+  };
+
+  const handleAddLinea = () => {
+    onChange([
+      ...values,
+      {
+        categoria: 'servicio',
+        nombreTrabajo: '',
+        cantidad: 1,
+        precioUnitario: 0,
+        subTotal: 0,
+      },
+    ]);
+  };
+
+  const handleRemoveLinea = (index) => {
+    const nuevas = values.filter((_, i) => i !== index);
+    onChange(nuevas);
+  };
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: gridTemplate,
-      }}
-    >
-      {fields.map(({ name, type, label, gridColumn }) => {
-        if (name === 'cantidad' && values.categoria === 'servicio') return null;
+    <div>
+      {values.map((linea, index) => (
+        <div key={index} style={{ marginBottom: '16px' }}>
+          <SchemaForm
+            values={linea}
+            onChange={(field, value) => handleLineaChange(index, field, value)}
+            fields={fields}
+            gridTemplateColumns="repeat(3, 1fr)"
+          />
+          <button type="button" onClick={() => handleRemoveLinea(index)}>
+            ❌ Eliminar línea
+          </button>
+        </div>
+      ))}
 
-        let column = gridColumn;
-        if (values.categoria === 'servicio') {
-          if (name === 'precioUnitario') column = '1 / 2';
-          if (name === 'total') column = '2 / 3';
-        }
-
-        // checkbox
-        if (type === 'checkbox') {
-          const col = column || '1 / -1';
-          return (
-            <div
-              key={name}
-              style={{ gridColumn: col }}
-              className="fs-subtitle inline"
-            >
-              <label htmlFor={name}>
-                <input
-                  id={name}
-                  name={name}
-                  type="checkbox"
-                  checked={!!values[name]}
-                  onChange={(e) => onChange(name, e.target.checked)}
-                />
-                <span>{label?.name || label}</span>
-              </label>
-            </div>
-          );
-        }
-
-        // select
-        if (type === 'select') {
-          return (
-            <div key={name} style={{ gridColumn: column }}>
-              <label htmlFor={name} className={label?.className || ''}>
-                {label?.name || label}
-              </label>
-              <select
-                id={name}
-                name={name}
-                value={values[name] || ''}
-                onChange={(e) => onChange(name, e.target.value)}
-                style={{ width: '100%' }}
-              >
-                <option value="">Seleccione...</option>
-                <option value="servicio">Servicio</option>
-                <option value="producto">Producto</option>
-              </select>
-            </div>
-          );
-        }
-
-        // textarea
-        if (type === 'textarea') {
-          return (
-            <div key={name} style={{ gridColumn: column }}>
-              <label htmlFor={name} className={label?.className || ''}>
-                {label?.name || label}
-              </label>
-              <textarea
-                id={name}
-                name={name}
-                placeholder={baseOrden[name]}
-                value={values[name] || ''}
-                onChange={(e) => onChange(name, e.target.value)}
-                style={{ width: '100%', minHeight: '60px' }}
-              />
-            </div>
-          );
-        }
-
-        // total → output
-        if (name === 'total') {
-          return (
-            <div key={name} style={{ gridColumn: column }}>
-              <label htmlFor={name} className={label?.className || ''}>
-                {label?.name || label}
-              </label>
-              <output
-                id={name}
-                name={name}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'right',
-                  fontWeight: 'bold',
-                  background: '#eee',
-                }}
-              >
-                {values[name]}
-              </output>
-            </div>
-          );
-        }
-
-        // input genérico
-        return (
-          <div key={name} style={{ gridColumn: column }}>
-            <label htmlFor={name} className={label?.className || ''}>
-              {label?.name || label}
-            </label>
-            <input
-              id={name}
-              name={name}
-              type={type || 'text'}
-              placeholder={baseOrden[name]}
-              value={values[name] || ''}
-              onChange={(e) => onChange(name, e.target.value)}
-              style={{ width: '100%' }}
-            />
-          </div>
-        );
-      })}
+      <button type="button" onClick={handleAddLinea}>
+        ➕ Agregar otra línea
+      </button>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useOrdenServicioContext } from '../OrdenServicioContext';
 
 const baseEquipo = {
   tipo: 'Ej: laptop',
@@ -9,28 +9,26 @@ const baseEquipo = {
   nroSerie: 'Ej: 3BO52134Q',
 };
 
-export function Step2({ values = {}, onChange }) {
-  const [equipo, setEquipo] = useState({
-    ...Object.fromEntries(Object.keys(baseEquipo).map((k) => [k, ''])),
-    ...values,
-  });
+// 🔹 helper de log solo en producción
+const prodLog = (...args) => {
+  if (process.env.NODE_ENV === 'production') {
+    console.info(...args);
+  }
+};
+
+export function Step2() {
+  const { orden, handleChangeOrden } = useOrdenServicioContext();
+  const equipo = orden.equipo || {};
 
   const handleChange = (field, value) => {
-    const updated = { ...equipo, [field]: value };
-    setEquipo(updated);
-    if (onChange) {
-      // ✅ mandamos solo el campo cambiado
-      onChange(field, value);
-    }
+    prodLog(`[Step2] Campo actualizado → ${field}:`, value);
+    handleChangeOrden('equipo', { ...equipo, [field]: value });
   };
 
   const handleCheckbox = (e) => {
     const checked = e.target.checked;
-    setEquipo((prev) => ({ ...prev, especificaciones: checked }));
-    if (onChange) {
-      // ✅ subimos el flag como campo individual
-      onChange('especificaciones', checked);
-    }
+    prodLog(`[Step2] Checkbox "especificaciones":`, checked);
+    handleChangeOrden('equipo', { ...equipo, especificaciones: checked });
   };
 
   return (
@@ -44,7 +42,7 @@ export function Step2({ values = {}, onChange }) {
             id={field}
             name={field}
             placeholder={baseEquipo[field]}
-            value={equipo[field]}
+            value={equipo[field] || ''}
             onChange={(e) => handleChange(field, e.target.value)}
             style={{ width: '100%' }}
           />

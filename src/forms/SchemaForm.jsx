@@ -1,22 +1,24 @@
 import { baseOrden } from '../constantes';
 
+/**
+ * SchemaForm: renderiza campos de manera declarativa según `fields`.
+ * - Agnóstica: no conoce negocio (usa `values`, `onChange`, `fields`).
+ * - En proceso de desacoplar renderers para mejorar escalabilidad.
+ */
 export function SchemaForm({
   values = {},
   onChange,
   fields = [],
-  gridTemplateColumns = 'repeat(3, 1fr)', // 👈 configurable desde Step3
+  gridTemplateColumns = 'repeat(3, 1fr)',
+  showDescriptions = true,
+  readOnly = false,
 }) {
   if (!fields.length) return null;
 
-  // 🔧 helper para resolver valor respetando defaultValue
   const resolveValue = (field, values) => {
     const v = values[field.name];
     const isEmpty = v === undefined || v === null || v === '';
-    const resolved = isEmpty
-      ? field.defaultValue ?? baseOrden[field.name] ?? ''
-      : v;
-
-    return resolved;
+    return isEmpty ? field.defaultValue ?? baseOrden[field.name] ?? '' : v;
   };
 
   return (
@@ -30,13 +32,10 @@ export function SchemaForm({
       {fields.map((field) => {
         const { name, type, label } = field;
 
-        // 1️⃣ visibilidad condicional
-        if (field.visibleWhen) {
-          const isVisible = field.visibleWhen(values);
-          if (!isVisible) return null;
-        }
+        // 1️⃣ Visibilidad condicional
+        if (field.visibleWhen && !field.visibleWhen(values)) return null;
 
-        // 2️⃣ grid dinámico
+        // 2️⃣ Grid dinámico
         const column =
           typeof field.gridColumn === 'function'
             ? field.gridColumn(values)
@@ -44,40 +43,43 @@ export function SchemaForm({
 
         const value = resolveValue(field, values);
 
-        // checkbox
+        // === Renderizado por tipo ===
         if (type === 'checkbox') {
-          const col = column || '1 / -1';
           return (
-            <div
-              key={name}
-              style={{ gridColumn: col }}
-              className="fs-subtitle inline"
-            >
-              <label htmlFor={name}>
+            <div key={name} style={{ gridColumn: column || '1 / -1' }}>
+              <label htmlFor={name} className={label?.className}>
                 <input
                   id={name}
                   name={name}
                   type="checkbox"
                   checked={!!value}
-                  onChange={(e) => onChange(name, e.target.checked)}
+                  disabled={readOnly}
+                  onChange={(e) => {
+                    console.log(`☑️ Checkbox ${name} →`, e.target.checked);
+                    onChange(name, e.target.checked); // 👈 envía true/false
+                  }}
+                  style={{ marginRight: '8px' }}
                 />
-                <span>{label?.name || label}</span>
+                {label?.name || label}
               </label>
+              {showDescriptions && field.description && (
+                <small>{field.description}</small>
+              )}
             </div>
           );
         }
 
-        // select
         if (type === 'select') {
           return (
             <div key={name} style={{ gridColumn: column }}>
-              <label htmlFor={name} className={label?.className || ''}>
+              <label htmlFor={name} className={label?.className}>
                 {label?.name || label}
               </label>
               <select
                 id={name}
                 name={name}
                 value={value}
+                disabled={readOnly}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%' }}
               >
@@ -87,15 +89,17 @@ export function SchemaForm({
                   </option>
                 ))}
               </select>
+              {showDescriptions && field.description && (
+                <small>{field.description}</small>
+              )}
             </div>
           );
         }
 
-        // textarea
         if (type === 'textarea') {
           return (
             <div key={name} style={{ gridColumn: column }}>
-              <label htmlFor={name} className={label?.className || ''}>
+              <label htmlFor={name} className={label?.className}>
                 {label?.name || label}
               </label>
               <textarea
@@ -103,18 +107,21 @@ export function SchemaForm({
                 name={name}
                 placeholder={baseOrden[name]}
                 value={value}
+                disabled={readOnly}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%', minHeight: '60px' }}
               />
+              {showDescriptions && field.description && (
+                <small>{field.description}</small>
+              )}
             </div>
           );
         }
 
-        // output (subTotal)
-        if (name === 'subTotal') {
+        if (type === 'output') {
           return (
             <div key={name} style={{ gridColumn: column }}>
-              <label htmlFor={name} className={label?.className || ''}>
+              <label htmlFor={name} className={label?.className}>
                 {label?.name || label}
               </label>
               <output
@@ -126,6 +133,8 @@ export function SchemaForm({
                   textAlign: 'right',
                   fontWeight: 'bold',
                   background: '#eee',
+                  padding: '4px 6px',
+                  borderRadius: '4px',
                 }}
               >
                 {value}
@@ -134,10 +143,10 @@ export function SchemaForm({
           );
         }
 
-        // input genérico
+        // input genérico (text, number, datetime-local, etc.)
         return (
           <div key={name} style={{ gridColumn: column }}>
-            <label htmlFor={name} className={label?.className || ''}>
+            <label htmlFor={name} className={label?.className}>
               {label?.name || label}
             </label>
             <input
@@ -146,11 +155,13 @@ export function SchemaForm({
               type={type || 'text'}
               placeholder={baseOrden[name]}
               value={value}
+              disabled={readOnly}
               onChange={(e) => onChange(name, e.target.value)}
-              style={{
-                width: '100%',
-              }}
+              style={{ width: '100%' }}
             />
+            {showDescriptions && field.description && (
+              <small>{field.description}</small>
+            )}
           </div>
         );
       })}

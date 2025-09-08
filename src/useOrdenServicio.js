@@ -1,72 +1,84 @@
-import { useCallback, useState } from 'react';
-import { useLineaServicio } from './useLineaServicio';
+// useOrdenServicio.js
+import { useCallback, useMemo } from 'react';
+import { createLineaServicio } from './useLineaServicio';
 
 const baseOrden = {
-  representanteId: '',
-  equipoId: '',
-  tecnico: '',
-  fechaIngreso: new Date().toISOString(),
-  diagnosticoCliente: '',
+  fechaIngreso: '',
+  diagnostico: '',
   observaciones: '',
   total: 0,
-  lineasServicio: [],
+  crearLinea: false,
 };
 
-export function useOrdenServicio(initialValues = {}, onChange) {
-  const withDefaults = {
-    ...baseOrden,
-    ...initialValues,
-  };
+/**
+ * Hook que maneja toda la Orden de Servicio
+ */
+export function useOrdenServicio(values = {}, onChange) {
+  // 1️⃣ Merge baseOrden con valores del padre
+  const orden = useMemo(() => ({ ...baseOrden, ...values }), [values]);
 
-  if (!withDefaults.lineasServicio.length) {
-    withDefaults.lineasServicio = [
-      {
-        tipoTrabajo: '',
-        nombreTrabajo: '',
-        descripcion: '',
-        precioUnitario: 0,
-        cantidad: 1,
-        subTotal: 0,
-        categoria: 'servicio',
-      },
-    ];
-  }
+  // 2️⃣ Garantizamos que exista al menos una línea
+  const rawLineas = orden.lineas?.length ? orden.lineas : [{}];
 
-  const [orden, setOrden] = useState(withDefaults);
+  // 3️⃣ Generamos la representación para cada línea
+  const lineas = rawLineas.map((linea, idx) => {
+    const mergedLinea = createLineaServicio(linea);
 
-  // ✅ ahora usamos los subtotales de cada línea
-  const recalculateTotal = useCallback((lineas) => {
-    return lineas.reduce((sum, linea) => {
-      return sum + (parseFloat(linea.subTotal) || 0);
-    }, 0);
-  }, []);
+    const handleChange = (field, value) => {
+      if (!onChange) return;
 
-  const handleChange = useCallback(
-    (field, value) => {
-      const updated = { ...orden, [field]: value };
+      // calcular línea actualizada
+      let updatedLinea = { ...mergedLinea, [field]: value };
 
-      if (field === 'lineasServicio') {
-        updated.total = recalculateTotal(value);
+      if (field === 'cantidad' || field === 'precioUnitario') {
+        const cantidad =
+          field === 'cantidad'
+            ? Number(value) || 0
+            : Number(mergedLinea.cantidad) || 0;
+        const precio =
+          field === 'precioUnitario'
+            ? Number(value) || 0
+            : Number(mergedLinea.precioUnitario) || 0;
+        updatedLinea.subTotal = cantidad * precio;
       }
 
-      setOrden(updated);
-      if (onChange) onChange(field, value);
-    },
-    [orden, onChange, recalculateTotal]
-  );
+      // crear nuevo array de líneas
+      let newLineas = [
+        ...rawLineas.slice(0, idx),
+        updatedLinea,
+        ...rawLineas.slice(idx + 1),
+      ];
 
-  const lineas = orden.lineasServicio.map((linea, index) => {
-    const { linea: merged, handleChange: handleLineaChange } = useLineaServicio(
-      linea,
-      (field, value) => {
-        const nuevas = [...orden.lineasServicio];
-        nuevas[index] = { ...nuevas[index], [field]: value };
-        handleChange('lineasServicio', nuevas);
+      // Manejo especial de crearLinea
+      if (updatedLinea.crearLinea === true) {
+        newLineas = newLineas.map((l, i) =>
+          i === idx ? { ...l, crearLinea: false } : l
+        );
+        newLineas = [...newLineas, createLineaServicio()]; // 👈 con defaults
       }
-    );
 
-    return { linea: merged, handleChange: handleLineaChange };
+      // reportar hacia arriba
+      onChange('lineas', newLineas);
+
+      // recalcular total
+      const total = newLineas.reduce(
+        (acc, l) => acc + (Number(l.subTotal) || 0),
+        0
+      );
+      onChange('total', total);
+    };
+
+    return { linea: mergedLinea, handleChange };
   });
 
-  return { orden, handleChange, lineas };
+  // 4️⃣ handleChange para campos de la orden (no de líneas)
+  const handleChangeOrden = useCallback(
+    (field, value) => {
+      if (!onChange) return;
+      onChange(field, value);
+    },
+    [onChange]
+  );
+
+  return { orden, lineas, handleChangeOrden };
 }
