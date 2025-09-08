@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useLineaServicio } from './useLineaServicio';
 
 const baseOrden = {
   representanteId: '',
@@ -12,33 +13,60 @@ const baseOrden = {
 };
 
 export function useOrdenServicio(initialValues = {}, onChange) {
-  const [orden, setOrden] = useState({ ...baseOrden, ...initialValues });
+  const withDefaults = {
+    ...baseOrden,
+    ...initialValues,
+  };
+
+  if (!withDefaults.lineasServicio.length) {
+    withDefaults.lineasServicio = [
+      {
+        tipoTrabajo: '',
+        nombreTrabajo: '',
+        descripcion: '',
+        precioUnitario: 0,
+        cantidad: 1,
+        subTotal: 0,
+        categoria: 'servicio',
+      },
+    ];
+  }
+
+  const [orden, setOrden] = useState(withDefaults);
+
+  // ✅ ahora usamos los subtotales de cada línea
+  const recalculateTotal = useCallback((lineas) => {
+    return lineas.reduce((sum, linea) => {
+      return sum + (parseFloat(linea.subTotal) || 0);
+    }, 0);
+  }, []);
 
   const handleChange = useCallback(
     (field, value) => {
       const updated = { ...orden, [field]: value };
 
-      // recalcular total desde lineasServicio
       if (field === 'lineasServicio') {
-        updated.total = updated.lineasServicio.reduce((sum, linea) => {
-          const cantidad = parseFloat(linea.cantidad || 0);
-          const precio = parseFloat(linea.precioUnitario || 0);
-          return sum + cantidad * precio;
-        }, 0);
+        updated.total = recalculateTotal(value);
       }
 
       setOrden(updated);
-      if (onChange) onChange(updated);
+      if (onChange) onChange(field, value);
     },
-    [orden, onChange]
+    [orden, onChange, recalculateTotal]
   );
 
-  // helper para manejar una línea específica
-  const updateLinea = (index, linea) => {
-    const lineas = [...orden.lineasServicio];
-    lineas[index] = linea;
-    handleChange('lineasServicio', lineas);
-  };
+  const lineas = orden.lineasServicio.map((linea, index) => {
+    const { linea: merged, handleChange: handleLineaChange } = useLineaServicio(
+      linea,
+      (field, value) => {
+        const nuevas = [...orden.lineasServicio];
+        nuevas[index] = { ...nuevas[index], [field]: value };
+        handleChange('lineasServicio', nuevas);
+      }
+    );
 
-  return { orden, handleChange, updateLinea };
+    return { linea: merged, handleChange: handleLineaChange };
+  });
+
+  return { orden, handleChange, lineas };
 }

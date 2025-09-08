@@ -3,13 +3,26 @@ import { SchemaForm } from './SchemaForm';
 
 export function Step3({ values = {}, onChange }) {
   const { linea, handleChange } = useLineaServicio(values, onChange);
+  console.log('[Step3.render]', { values, linea });
+  // 👇 lógica estética queda acá, no en SchemaForm
+
+  const gridTemplate =
+    linea.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
+
+  // 🔍 debug log
+  console.log('[Step3 → SchemaForm.props]', {
+    linea,
+    gridTemplate,
+    values,
+  });
 
   return (
     <SchemaForm
-      values={linea}
+      values={{ ...linea }} // 👈 pasamos resuelto
       onChange={handleChange}
       showDescriptions={false} // 🔕 oculta todas las descripciones
       readOnly={false} // 🔒 bloquea el formulario
+      gridTemplateColumns={gridTemplate} // 👈 pasa layout
       fields={[
         {
           name: 'categoria',
@@ -52,18 +65,21 @@ export function Step3({ values = {}, onChange }) {
           type: 'number',
           label: { name: 'Cantidad', className: 'sr-only' },
           gridColumn: '1 / 2',
+          visibleWhen: (values) => values.categoria === 'producto',
         },
         {
           name: 'precioUnitario',
           type: 'number',
           label: { name: 'Precio unitario', className: 'sr-only' },
-          gridColumn: '2 / 3',
+          gridColumn: (values) =>
+            values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
         },
         {
-          name: 'total',
+          name: 'subTotal',
           type: 'output',
-          label: { name: 'Total', className: 'sr-only' },
-          gridColumn: '3 / 4',
+          label: { name: 'subTotal', className: 'sr-only' },
+          gridColumn: (values) =>
+            values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
         },
         {
           name: 'crearLinea',
