@@ -8,8 +8,7 @@
 .step-enter-active {
   opacity: 1;
   transform: translateX(0);
-  transition: 
-    opacity 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+  transition: opacity 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
     transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
 
@@ -25,8 +24,7 @@
 .step-exit-active {
   opacity: 0;
   transform: scale(0.8);
-  transition: 
-    opacity 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+  transition: opacity 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55),
     transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
 

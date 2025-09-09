@@ -7,6 +7,6 @@ export const baseOrden = {
   observaciones: '',
   total: 0,
   crearLinea: false,
-  lineas: [createLineaServicio()],
+  lineas: [], // 🔹 ahora arranca vacío
   createLineaServicio, // 👉 para inyección de dependencias
 };

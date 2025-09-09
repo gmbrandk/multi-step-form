@@ -1,11 +1,12 @@
-import MultiStepForm from './MultiStepForm';
-import { OrdenServicioProvider } from './OrdenServicioContext';
-import { baseOrden } from './constants';
+// App.jsx
+import { OrdenServicioWizard } from './components/OrdenServicioWizard';
+import { OrdenServicioProvider } from './context/OrdenServicioContext';
+import { baseOrden } from './domain/constants';
 
 export default function App() {
   return (
     <OrdenServicioProvider defaults={baseOrden}>
-      <MultiStepForm />
+      <OrdenServicioWizard />
     </OrdenServicioProvider>
   );
 }

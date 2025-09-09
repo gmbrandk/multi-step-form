@@ -1,4 +1,4 @@
-import { useOrdenServicioContext } from '../OrdenServicioContext';
+import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { SchemaForm } from './SchemaForm';
 
 // 🔹 helper de log solo en producción
@@ -61,7 +61,7 @@ const equipoFields = [
   },
 ];
 
-export function Step2() {
+export function StepEquipo() {
   const { orden, handleChangeOrden } = useOrdenServicioContext();
   const equipo = orden.equipo || {};
 

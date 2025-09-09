@@ -1,29 +1,30 @@
-import { useOrdenServicioContext } from '../OrdenServicioContext';
+// StepOrdenServicio.jsx
+import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
+import { createLineaServicio } from '../../domain/createLineaServicio';
 import { SchemaForm } from './SchemaForm';
 
-// 🔹 helper de log solo en producción
-const prodLog = (...args) => {
-  if (process.env.NODE_ENV === 'production') {
-    console.info(...args);
-  }
-};
-
-export function Step3() {
+export function StepOrdenServicio() {
   const { orden, handleChangeLinea } = useOrdenServicioContext();
-  const linea = orden.lineas[0] || {};
+
+  // 🔹 siempre con defaults si no hay línea
+  const linea = orden.lineas[0] || createLineaServicio();
+
   const gridTemplate =
     linea.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
 
-  // 📌 Logs visibles SOLO en producción (momentáneos para debug en vivo)
-  prodLog('📌 Step3.linea:', JSON.stringify(linea, null, 2));
-  prodLog('📌 Step3.linea.categoria:', linea?.categoria);
+  // 🔹 log estratégico para ver el estado de la línea
+  console.group(`📝 StepOrdenServicio`);
+  console.log('values:', linea);
+  console.log('categoria:', linea.categoria);
+  console.log('cantidad:', linea.cantidad);
+  console.groupEnd();
 
   return (
     <SchemaForm
       values={linea}
       onChange={(field, value) => {
-        prodLog(`🔄 Step3.onChange → ${field}:`, value);
-        handleChangeLinea(0, field, value); // 👈 actualiza línea + root.crearLinea
+        console.log(`🔄 StepOrdenServicio.onChange [${field}] =`, value);
+        handleChangeLinea(0, field, value);
       }}
       showDescriptions={false}
       readOnly={false}
@@ -74,6 +75,7 @@ export function Step3() {
           label: { name: 'Cantidad', className: 'sr-only' },
           placeholder: 'Ej: 1',
           gridColumn: '1 / 2',
+          defaultValue: 1, // 🔹 aseguramos un valor válido
           visibleWhen: (values) => values.categoria === 'producto',
         },
         {
@@ -83,6 +85,7 @@ export function Step3() {
           placeholder: 'Ej: 150.00',
           gridColumn: (values) =>
             values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
+          defaultValue: 0,
         },
         {
           name: 'subTotal',
@@ -90,6 +93,7 @@ export function Step3() {
           label: { name: 'SubTotal', className: 'sr-only' },
           gridColumn: (values) =>
             values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
+          defaultValue: 0,
         },
         {
           name: 'crearLinea',

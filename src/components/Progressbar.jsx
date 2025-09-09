@@ -1,5 +1,5 @@
-import './ProgressBar.css';
-import { useProgressbarState } from './useProgressBarState';
+import { useProgressbarState } from '../logic/useProgressBarState';
+import '../styles/ProgressBar.css';
 
 export function ProgressBar({ step, labels }) {
   const states = useProgressbarState(step, labels.length);

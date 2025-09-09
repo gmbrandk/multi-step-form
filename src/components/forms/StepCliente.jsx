@@ -9,7 +9,7 @@ const baseCliente = {
   direccion: 'Ej: Av. Siempre Viva 742',
 };
 
-export function Step1({ values = {}, onChange }) {
+export function StepCliente({ values = {}, onChange }) {
   const [cliente, setCliente] = useState({
     ...Object.fromEntries(Object.keys(baseCliente).map((k) => [k, ''])),
     ...values,

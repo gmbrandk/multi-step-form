@@ -1,29 +1,22 @@
+// components/StepWizardCore.jsx
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import './MultiStepForm.css';
+import { useFramerStepAnimation } from '../logic/useFramerStepAnimation';
 import { ProgressBar } from './Progressbar';
-import { getSteps } from './stepsConfig';
-import { useFramerStepAnimation } from './useFramerStepAnimation';
 
-// helper para logs JSON bonitos
-const logJson = (label, data) => {
-  console.log(`${label}:`, JSON.stringify(data, null, 2));
-};
-
-export function MultiStepFormCore({ orden, onSubmit }) {
+export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
   const [step, setStep] = useState(0);
   const [prevDirection, setPrevDirection] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [pendingStep, setPendingStep] = useState(null);
 
   const fieldsetRef = useRef(null);
-  const formRef = useRef(null);
 
-  // 🔹 los steps se calculan según el orden recibido
-  const steps = getSteps(orden);
   const visibleSteps = steps.filter((s) => !s.hidden);
+  const CurrentStep =
+    visibleSteps[step]?.Component ?? (() => <p>No hay pasos</p>);
 
-  // focus automático en el primer input
+  // auto-focus en cada step
   useEffect(() => {
     if (fieldsetRef.current) {
       const firstInput = fieldsetRef.current.querySelector(
@@ -55,6 +48,14 @@ export function MultiStepFormCore({ orden, onSubmit }) {
     }, 650);
   };
 
+  const handleNext = async () => {
+    const current = visibleSteps[step];
+    const done = await onStepSubmit?.(current);
+    if (done !== false) {
+      goToStep(step + 1, 1);
+    }
+  };
+
   const goPrev = () => {
     goToStep(step - 1, -1);
   };
@@ -64,18 +65,14 @@ export function MultiStepFormCore({ orden, onSubmit }) {
     debug: false,
   });
 
-  const CurrentStep =
-    visibleSteps[step]?.Component ?? (() => <p>No hay pasos</p>);
-
   return (
     <div className="form-wrapper">
       <ProgressBar step={step} labels={visibleSteps.map((s) => s.title)} />
 
       <motion.form
         className="msform"
-        ref={formRef}
-        transition={{ duration: 0.6, ease: 'easeInOut' }}
         onSubmit={(e) => e.preventDefault()}
+        transition={{ duration: 0.6, ease: 'easeInOut' }}
       >
         <AnimatePresence mode="sync" initial={false} custom={prevDirection}>
           <motion.fieldset
@@ -109,7 +106,7 @@ export function MultiStepFormCore({ orden, onSubmit }) {
                 <button
                   type="button"
                   className="next action-button"
-                  onClick={() => goToStep(step + 1, 1)}
+                  onClick={handleNext}
                   disabled={isAnimating}
                 >
                   Next
@@ -118,7 +115,7 @@ export function MultiStepFormCore({ orden, onSubmit }) {
                 <button
                   type="submit"
                   className="submit action-button"
-                  onClick={() => onSubmit?.(orden)}
+                  onClick={onFinalSubmit}
                 >
                   Submit
                 </button>

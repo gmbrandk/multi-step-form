@@ -15,16 +15,20 @@ export function OrdenServicioProvider({
   initialValues = {},
 }) {
   const [orden, setOrden] = useState(() => {
-    // 🔹 merge defaults + initialValues
-    const merged = { ...defaults, ...initialValues };
-
-    // 🔹 asegura que siempre haya lineas
-    if (!merged.lineas || merged.lineas.length === 0) {
-      merged.lineas = defaults.lineas ? [...defaults.lineas] : [];
-    }
-
-    return merged;
+    // 🔹 merge defaults + initialValues sin forzar lineas
+    return {
+      ...defaults,
+      ...initialValues,
+      lineas: initialValues.lineas ?? [],
+    };
   });
+
+  const handleAgregarLinea = useCallback(() => {
+    setOrden((prev) => ({
+      ...prev,
+      lineas: [...prev.lineas, defaults.createLineaServicio()],
+    }));
+  }, [defaults]);
 
   const handleChangeOrden = useCallback((field, value) => {
     setOrden((prev) => ({ ...prev, [field]: value }));
@@ -33,8 +37,7 @@ export function OrdenServicioProvider({
   const handleChangeLinea = useCallback(
     (idx, field, value) => {
       setOrden((prev) => {
-        const rawLineas =
-          prev.lineas?.length > 0 ? prev.lineas : defaults.lineas ?? []; // fallback aquí también
+        const rawLineas = prev.lineas ?? [];
 
         const current = rawLineas[idx] ?? {};
         const updatedLinea = { ...current, [field]: value };
@@ -58,12 +61,15 @@ export function OrdenServicioProvider({
           ...rawLineas.slice(idx + 1),
         ];
 
-        // 🔹 si marcaron "crearLinea", agregamos nueva
+        // 🔹 si marcaron "crearLinea", agregamos una sola vez
         if (field === 'crearLinea' && value === true) {
-          if (typeof defaults.createLineaServicio === 'function') {
-            newLineas.push(defaults.createLineaServicio());
-          } else {
-            newLineas.push({});
+          // solo agregar nueva línea si no existe
+          if (!prev.lineas[idx + 1]) {
+            if (typeof defaults.createLineaServicio === 'function') {
+              newLineas.push(defaults.createLineaServicio());
+            } else {
+              newLineas.push({});
+            }
           }
         }
 
@@ -85,8 +91,13 @@ export function OrdenServicioProvider({
   );
 
   const value = useMemo(
-    () => ({ orden, handleChangeOrden, handleChangeLinea }),
-    [orden, handleChangeOrden, handleChangeLinea]
+    () => ({
+      orden,
+      handleChangeOrden,
+      handleChangeLinea,
+      handleAgregarLinea, // 👈 nuevo
+    }),
+    [orden, handleChangeOrden, handleChangeLinea, handleAgregarLinea]
   );
 
   return (
