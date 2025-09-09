@@ -73,10 +73,10 @@ body {
 }
 
 /* Inputs */
+.msform output,
 .msform input,
 .msform textarea,
-.msform select,
-.msform output {
+.msform select {
   padding: 15px;
   border: 1px solid #ccc;
   border-radius: 3px;

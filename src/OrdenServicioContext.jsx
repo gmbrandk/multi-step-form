@@ -1,3 +1,4 @@
+// OrdenServicioContext.js
 import {
   createContext,
   useCallback,
@@ -5,69 +6,83 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { createLineaServicio } from './useLineaServicio';
-
-const baseOrden = {
-  fechaIngreso: '',
-  diagnostico: '',
-  observaciones: '',
-  total: 0,
-  crearLinea: false,
-  lineas: [createLineaServicio()], // ✅ arranca con defaults
-};
 
 const OrdenServicioContext = createContext();
 
-export function OrdenServicioProvider({ children, initialValues = {} }) {
-  const [orden, setOrden] = useState({ ...baseOrden, ...initialValues });
+export function OrdenServicioProvider({
+  children,
+  defaults = {},
+  initialValues = {},
+}) {
+  const [orden, setOrden] = useState(() => {
+    // 🔹 merge defaults + initialValues
+    const merged = { ...defaults, ...initialValues };
+
+    // 🔹 asegura que siempre haya lineas
+    if (!merged.lineas || merged.lineas.length === 0) {
+      merged.lineas = defaults.lineas ? [...defaults.lineas] : [];
+    }
+
+    return merged;
+  });
 
   const handleChangeOrden = useCallback((field, value) => {
     setOrden((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleChangeLinea = useCallback((idx, field, value) => {
-    setOrden((prev) => {
-      const rawLineas = prev.lineas?.length
-        ? prev.lineas
-        : [createLineaServicio()];
-      const mergedLinea = createLineaServicio(rawLineas[idx] || {});
-      let updatedLinea = { ...mergedLinea, [field]: value };
+  const handleChangeLinea = useCallback(
+    (idx, field, value) => {
+      setOrden((prev) => {
+        const rawLineas =
+          prev.lineas?.length > 0 ? prev.lineas : defaults.lineas ?? []; // fallback aquí también
 
-      if (field === 'cantidad' || field === 'precioUnitario') {
-        const cantidad =
-          field === 'cantidad'
-            ? Number(value) || 0
-            : Number(mergedLinea.cantidad) || 0;
-        const precio =
-          field === 'precioUnitario'
-            ? Number(value) || 0
-            : Number(mergedLinea.precioUnitario) || 0;
-        updatedLinea.subTotal = cantidad * precio;
-      }
+        const current = rawLineas[idx] ?? {};
+        const updatedLinea = { ...current, [field]: value };
 
-      let newLineas = [
-        ...rawLineas.slice(0, idx),
-        updatedLinea,
-        ...rawLineas.slice(idx + 1),
-      ];
+        // 🔹 recalcular subtotal si corresponde
+        if (field === 'cantidad' || field === 'precioUnitario') {
+          const cantidad =
+            field === 'cantidad'
+              ? Number(value) || 0
+              : Number(current.cantidad) || 0;
+          const precio =
+            field === 'precioUnitario'
+              ? Number(value) || 0
+              : Number(current.precioUnitario) || 0;
+          updatedLinea.subTotal = cantidad * precio;
+        }
 
-      if (field === 'crearLinea' && value === true) {
-        newLineas = [...newLineas, createLineaServicio()]; // ✅ nunca {}
-      }
+        let newLineas = [
+          ...rawLineas.slice(0, idx),
+          updatedLinea,
+          ...rawLineas.slice(idx + 1),
+        ];
 
-      const total = newLineas.reduce(
-        (acc, l) => acc + (Number(l.subTotal) || 0),
-        0
-      );
+        // 🔹 si marcaron "crearLinea", agregamos nueva
+        if (field === 'crearLinea' && value === true) {
+          if (typeof defaults.createLineaServicio === 'function') {
+            newLineas.push(defaults.createLineaServicio());
+          } else {
+            newLineas.push({});
+          }
+        }
 
-      return {
-        ...prev,
-        lineas: newLineas.map((l) => createLineaServicio(l)), // ✅ sanear todas
-        total,
-        crearLinea: field === 'crearLinea' ? value : prev.crearLinea,
-      };
-    });
-  }, []);
+        // 🔹 recalcular total
+        const total = newLineas.reduce(
+          (acc, l) => acc + (Number(l.subTotal) || 0),
+          0
+        );
+
+        return {
+          ...prev,
+          lineas: newLineas,
+          total,
+          crearLinea: field === 'crearLinea' ? value : prev.crearLinea,
+        };
+      });
+    },
+    [defaults]
+  );
 
   const value = useMemo(
     () => ({ orden, handleChangeOrden, handleChangeLinea }),

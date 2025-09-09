@@ -6,6 +6,7 @@ const fields = [
     type: 'select',
     label: { name: 'Categoría', className: 'sr-only' },
     gridColumn: '1 / 4',
+    defaultValue: 'servicio',
     options: [
       { value: 'servicio', label: 'Servicios' },
       { value: 'producto', label: 'Productos' },
@@ -16,12 +17,15 @@ const fields = [
     type: 'text',
     label: { name: 'Nombre del trabajo', className: 'sr-only' },
     gridColumn: '1 / 4',
+    placeholder: 'Ej: Instalación de software',
+    defaultValue: '',
   },
   {
     name: 'cantidad',
     type: 'number',
     label: { name: 'Cantidad', className: 'sr-only' },
     gridColumn: '1 / 2',
+    defaultValue: 1,
     visibleWhen: (values) => values.categoria === 'producto',
   },
   {
@@ -29,12 +33,14 @@ const fields = [
     type: 'number',
     label: { name: 'Precio unitario', className: 'sr-only' },
     gridColumn: '2 / 3',
+    defaultValue: 0,
   },
   {
     name: 'subTotal',
     type: 'output',
     label: { name: 'SubTotal', className: 'sr-only' },
     gridColumn: '3 / 4',
+    defaultValue: 0,
   },
 ];
 
@@ -50,46 +56,34 @@ export function StepLineaServicio({ values = [], onChange }) {
       nuevas[index].subTotal = cantidad * precio;
     }
 
+    console.log(`🔄 handleLineaChange: linea[${index}].${field} =`, value);
     onChange(nuevas);
   };
 
-  const handleAddLinea = () => {
-    onChange([
-      ...values,
-      {
-        categoria: 'servicio',
-        nombreTrabajo: '',
-        cantidad: 1,
-        precioUnitario: 0,
-        subTotal: 0,
-      },
-    ]);
-  };
-
-  const handleRemoveLinea = (index) => {
-    const nuevas = values.filter((_, i) => i !== index);
-    onChange(nuevas);
-  };
+  // condition render
+  if (!values || values.length === 0) {
+    console.warn('⚠️ StepLineaServicio: values vacío');
+    return <p>No hay líneas de servicio para mostrar.</p>;
+  }
 
   return (
     <div>
-      {values.map((linea, index) => (
-        <div key={index} style={{ marginBottom: '16px' }}>
-          <SchemaForm
-            values={linea}
-            onChange={(field, value) => handleLineaChange(index, field, value)}
-            fields={fields}
-            gridTemplateColumns="repeat(3, 1fr)"
-          />
-          <button type="button" onClick={() => handleRemoveLinea(index)}>
-            ❌ Eliminar línea
-          </button>
-        </div>
-      ))}
+      {values.map((linea, index) => {
+        console.log(`📌 Renderizando linea[${index}]:`, linea);
 
-      <button type="button" onClick={handleAddLinea}>
-        ➕ Agregar otra línea
-      </button>
+        return (
+          <div key={index} style={{ marginBottom: '16px' }}>
+            <SchemaForm
+              values={linea}
+              onChange={(field, value) =>
+                handleLineaChange(index, field, value)
+              }
+              fields={fields}
+              gridTemplateColumns="repeat(3, 1fr)"
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import { baseOrden } from '../constantes';
-
 /**
  * SchemaForm: renderiza campos de manera declarativa según `fields`.
  * - Agnóstica: no conoce negocio (usa `values`, `onChange`, `fields`).
@@ -18,7 +16,7 @@ export function SchemaForm({
   const resolveValue = (field, values) => {
     const v = values[field.name];
     const isEmpty = v === undefined || v === null || v === '';
-    return isEmpty ? field.defaultValue ?? baseOrden[field.name] ?? '' : v;
+    return isEmpty ? field.defaultValue ?? '' : v;
   };
 
   return (
@@ -30,7 +28,7 @@ export function SchemaForm({
       }}
     >
       {fields.map((field) => {
-        const { name, type, label } = field;
+        const { name, type, label, className } = field;
 
         // 1️⃣ Visibilidad condicional
         if (field.visibleWhen && !field.visibleWhen(values)) return null;
@@ -46,7 +44,15 @@ export function SchemaForm({
         // === Renderizado por tipo ===
         if (type === 'checkbox') {
           return (
-            <div key={name} style={{ gridColumn: column || '1 / -1' }}>
+            <div
+              key={name}
+              className={className}
+              style={{
+                gridColumn: column || '1 / -1',
+                justifySelf: 'center',
+                alignSelf: 'center',
+              }}
+            >
               <label htmlFor={name} className={label?.className}>
                 <input
                   id={name}
@@ -58,9 +64,8 @@ export function SchemaForm({
                     console.log(`☑️ Checkbox ${name} →`, e.target.checked);
                     onChange(name, e.target.checked); // 👈 envía true/false
                   }}
-                  style={{ marginRight: '8px' }}
                 />
-                {label?.name || label}
+                <span>{label?.name || label}</span>
               </label>
               {showDescriptions && field.description && (
                 <small>{field.description}</small>
@@ -105,7 +110,7 @@ export function SchemaForm({
               <textarea
                 id={name}
                 name={name}
-                placeholder={baseOrden[name]}
+                placeholder={field.placeholder}
                 value={value}
                 disabled={readOnly}
                 onChange={(e) => onChange(name, e.target.value)}
@@ -130,11 +135,9 @@ export function SchemaForm({
                 style={{
                   display: 'block',
                   width: '100%',
-                  textAlign: 'right',
+                  textAlign: 'left',
                   fontWeight: 'bold',
                   background: '#eee',
-                  padding: '4px 6px',
-                  borderRadius: '4px',
                 }}
               >
                 {value}
@@ -153,7 +156,7 @@ export function SchemaForm({
               id={name}
               name={name}
               type={type || 'text'}
-              placeholder={baseOrden[name]}
+              placeholder={field.placeholder}
               value={value}
               disabled={readOnly}
               onChange={(e) => onChange(name, e.target.value)}
