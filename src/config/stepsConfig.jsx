@@ -1,4 +1,3 @@
-// stepsConfig.js
 import { StepCliente } from '../components/forms/StepCliente';
 import { StepEquipo } from '../components/forms/StepEquipo';
 import { StepFichaTecnica } from '../components/forms/StepFichaTecnica';

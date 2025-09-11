@@ -1,4 +1,5 @@
-// OrdenServicioContext.js
+import { getClienteService } from '../services/clienteService';
+
 import {
   createContext,
   useCallback,
@@ -14,14 +15,26 @@ export function OrdenServicioProvider({
   defaults = {},
   initialValues = {},
 }) {
-  const [orden, setOrden] = useState(() => {
-    // 🔹 merge defaults + initialValues sin forzar lineas
-    return {
-      ...defaults,
-      ...initialValues,
-      lineas: initialValues.lineas ?? [],
-    };
-  });
+  const [orden, setOrden] = useState(() => ({
+    ...defaults,
+    ...initialValues,
+    lineas: initialValues.lineas ?? [],
+  }));
+
+  // 🔹 Crear cliente en backend o mock
+  const crearCliente = useCallback(async (datosCliente) => {
+    const service = getClienteService();
+    const res = await service.crearCliente(datosCliente);
+
+    if (res.success) {
+      setOrden((prev) => ({
+        ...prev,
+        cliente: res.details.cliente, // se guarda el objeto completo con _id
+      }));
+    }
+
+    return res;
+  }, []);
 
   const handleAgregarLinea = useCallback(() => {
     setOrden((prev) => ({
@@ -38,7 +51,6 @@ export function OrdenServicioProvider({
     (idx, field, value) => {
       setOrden((prev) => {
         const rawLineas = prev.lineas ?? [];
-
         const current = rawLineas[idx] ?? {};
         const updatedLinea = { ...current, [field]: value };
 
@@ -61,9 +73,7 @@ export function OrdenServicioProvider({
           ...rawLineas.slice(idx + 1),
         ];
 
-        // 🔹 si marcaron "crearLinea", agregamos una sola vez
         if (field === 'crearLinea' && value === true) {
-          // solo agregar nueva línea si no existe
           if (!prev.lineas[idx + 1]) {
             if (typeof defaults.createLineaServicio === 'function') {
               newLineas.push(defaults.createLineaServicio());
@@ -73,7 +83,6 @@ export function OrdenServicioProvider({
           }
         }
 
-        // 🔹 recalcular total
         const total = newLineas.reduce(
           (acc, l) => acc + (Number(l.subTotal) || 0),
           0
@@ -93,11 +102,18 @@ export function OrdenServicioProvider({
   const value = useMemo(
     () => ({
       orden,
+      crearCliente, // 👈 aquí se expone
       handleChangeOrden,
       handleChangeLinea,
-      handleAgregarLinea, // 👈 nuevo
+      handleAgregarLinea,
     }),
-    [orden, handleChangeOrden, handleChangeLinea, handleAgregarLinea]
+    [
+      orden,
+      crearCliente,
+      handleChangeOrden,
+      handleChangeLinea,
+      handleAgregarLinea,
+    ]
   );
 
   return (
@@ -109,10 +125,9 @@ export function OrdenServicioProvider({
 
 export function useOrdenServicioContext() {
   const ctx = useContext(OrdenServicioContext);
-  if (!ctx) {
+  if (!ctx)
     throw new Error(
       'useOrdenServicioContext debe usarse dentro de OrdenServicioProvider'
     );
-  }
   return ctx;
 }

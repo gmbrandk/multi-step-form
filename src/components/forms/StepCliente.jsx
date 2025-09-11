@@ -1,46 +1,67 @@
-import { useState } from 'react';
+import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
+import { SchemaForm } from './SchemaForm';
 
-const baseCliente = {
-  nombres: 'Ej: Adriana Josefina',
-  apellidos: 'Ej: Tudela Gutiérrez',
-  dni: 'Ej: 45591954',
-  telefono: 'Ej: 913458768',
-  email: 'Ej: ejemplo@correo.com',
-  direccion: 'Ej: Av. Siempre Viva 742',
-};
+// 🔹 Declaración de campos del cliente
+const clienteFields = [
+  {
+    name: 'nombres',
+    type: 'text',
+    label: { name: 'Nombres', className: 'sr-only' },
+    placeholder: 'Ej: Adriana Josefina',
+    gridColumn: '1 / 4',
+  },
+  {
+    name: 'apellidos',
+    type: 'text',
+    label: { name: 'Apellidos', className: 'sr-only' },
+    placeholder: 'Ej: Tudela Gutiérrez',
+    gridColumn: '1 / 4',
+  },
+  {
+    name: 'dni',
+    type: 'text',
+    label: { name: 'DNI', className: 'sr-only' },
+    placeholder: 'Ej: 45591954',
+    gridColumn: '1 / 4',
+  },
+  {
+    name: 'telefono',
+    type: 'text',
+    label: { name: 'Teléfono', className: 'sr-only' },
+    placeholder: 'Ej: 913458768',
+    gridColumn: '1 / 4',
+  },
+  {
+    name: 'email',
+    type: 'text',
+    label: { name: 'Email', className: 'sr-only' },
+    placeholder: 'Ej: ejemplo@correo.com',
+    gridColumn: '1 / 4',
+  },
+  {
+    name: 'direccion',
+    type: 'text',
+    label: { name: 'Dirección', className: 'sr-only' },
+    placeholder: 'Ej: Av. Siempre Viva 742',
+    gridColumn: '1 / 4',
+  },
+];
 
-export function StepCliente({ values = {}, onChange }) {
-  const [cliente, setCliente] = useState({
-    ...Object.fromEntries(Object.keys(baseCliente).map((k) => [k, ''])),
-    ...values,
-  });
-
-  const handleChange = (field, value) => {
-    const updated = { ...cliente, [field]: value };
-    setCliente(updated);
-    if (onChange) {
-      // ✅ ahora pasamos el nombre del campo + valor
-      onChange(field, value);
-    }
-  };
+export function StepCliente() {
+  const { orden, handleChangeOrden } = useOrdenServicioContext();
 
   return (
-    <>
-      {Object.keys(baseCliente).map((field) => (
-        <div key={field}>
-          <label htmlFor={field} className="sr-only">
-            {field}
-          </label>
-          <input
-            id={field}
-            name={field}
-            placeholder={baseCliente[field]}
-            value={cliente[field]}
-            onChange={(e) => handleChange(field, e.target.value)}
-            style={{ width: '100%' }}
-          />
-        </div>
-      ))}
-    </>
+    <SchemaForm
+      values={orden.cliente || {}} // 👈 leemos desde el Context
+      onChange={(field, value) =>
+        handleChangeOrden('cliente', {
+          ...orden.cliente,
+          [field]: value,
+        })
+      }
+      fields={clienteFields}
+      gridTemplateColumns="repeat(3, 1fr)"
+      showDescriptions={false}
+    />
   );
 }

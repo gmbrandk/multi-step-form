@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useFramerStepAnimation } from '../logic/useFramerStepAnimation';
+import { getClienteService } from '../services/clienteService';
 import { ProgressBar } from './Progressbar';
 
 export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
@@ -9,6 +10,10 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
   const [prevDirection, setPrevDirection] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [pendingStep, setPendingStep] = useState(null);
+
+  const providerInfo =
+    getClienteService().obtenerNombreProveedor?.() || 'desconocido';
+  const providerType = getClienteService().obtenerTipoProveedor?.() || '';
 
   const fieldsetRef = useRef(null);
 
@@ -66,64 +71,77 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
   });
 
   return (
-    <div className="form-wrapper">
-      <ProgressBar step={step} labels={visibleSteps.map((s) => s.title)} />
-
-      <motion.form
-        className="msform"
-        onSubmit={(e) => e.preventDefault()}
-        transition={{ duration: 0.6, ease: 'easeInOut' }}
+    <>
+      <div
+        style={{
+          position: 'absolute',
+          top: '10px',
+          right: '20px',
+          padding: '6px 12px',
+          borderRadius: '6px',
+          background: providerType === 'mock' ? '#ffe58f' : '#91d5ff',
+          color: '#000',
+          fontSize: '0.8rem',
+          fontWeight: 'bold',
+        }}
       >
-        <AnimatePresence mode="sync" initial={false} custom={prevDirection}>
-          <motion.fieldset
-            key={step}
-            ref={fieldsetRef}
-            custom={prevDirection}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            layout="position"
-          >
-            <legend className="sr-only">{visibleSteps[step]?.title}</legend>
-            <h2 className="fs-title">{visibleSteps[step]?.title}</h2>
-            <h3 className="fs-subtitle">{visibleSteps[step]?.subtitle}</h3>
+        {providerInfo} ({providerType})
+      </div>
+      <div className="form-wrapper">
+        <ProgressBar step={step} labels={visibleSteps.map((s) => s.title)} />
 
-            <CurrentStep />
+        <div className="msform">
+          <AnimatePresence mode="sync" initial={false} custom={prevDirection}>
+            <motion.fieldset
+              key={step}
+              ref={fieldsetRef}
+              custom={prevDirection}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              layout="position"
+            >
+              <legend className="sr-only">{visibleSteps[step]?.title}</legend>
+              <h2 className="fs-title">{visibleSteps[step]?.title}</h2>
+              <h3 className="fs-subtitle">{visibleSteps[step]?.subtitle}</h3>
 
-            <div>
-              {step > 0 && (
-                <button
-                  type="button"
-                  className="previous action-button"
-                  onClick={goPrev}
-                  disabled={isAnimating}
-                >
-                  Previous
-                </button>
-              )}
-              {step < visibleSteps.length - 1 ? (
-                <button
-                  type="button"
-                  className="next action-button"
-                  onClick={handleNext}
-                  disabled={isAnimating}
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="submit action-button"
-                  onClick={onFinalSubmit}
-                >
-                  Submit
-                </button>
-              )}
-            </div>
-          </motion.fieldset>
-        </AnimatePresence>
-      </motion.form>
-    </div>
+              <CurrentStep />
+
+              <div>
+                {step > 0 && (
+                  <button
+                    type="button"
+                    className="previous action-button"
+                    onClick={goPrev}
+                    disabled={isAnimating}
+                  >
+                    Previous
+                  </button>
+                )}
+                {step < visibleSteps.length - 1 ? (
+                  <button
+                    type="button"
+                    className="next action-button"
+                    onClick={handleNext}
+                    disabled={isAnimating}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="submit action-button"
+                    onClick={onFinalSubmit}
+                  >
+                    Submit
+                  </button>
+                )}
+              </div>
+            </motion.fieldset>
+          </AnimatePresence>
+        </div>
+      </div>
+    </>
   );
 }
