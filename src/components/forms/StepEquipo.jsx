@@ -1,6 +1,6 @@
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
+import { useRenderLogger } from '../../utils/useRenderLogger';
 import { SchemaForm } from './SchemaForm';
-
 // 🔹 helper de log solo en producción
 const prodLog = (...args) => {
   if (process.env.NODE_ENV === 'production') {
@@ -62,6 +62,7 @@ const equipoFields = [
 ];
 
 export function StepEquipo() {
+  useRenderLogger('StepEquipo');
   const { orden, handleChangeOrden } = useOrdenServicioContext();
   const equipo = orden.equipo || {};
 

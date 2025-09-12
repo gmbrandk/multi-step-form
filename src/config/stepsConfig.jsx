@@ -36,13 +36,15 @@ export const getSteps = (orden) => {
     },
   ];
 
-  const lineSteps = (orden?.lineas || []).map((linea, idx) => ({
-    id: `linea-${idx}`,
-    title: `Línea de servicio #${idx + 1}`,
-    subtitle: linea.nombreTrabajo || 'Configura la línea',
-    Component: () => <StepLineaServicio index={idx} />,
-    hidden: !orden?.crearLinea,
-  }));
+  const lineSteps = (orden?.lineas || [])
+    .slice(1) // ignora la primera
+    .map((linea, idx) => ({
+      id: `linea-${idx + 1}`,
+      title: `Línea de servicio #${idx + 2}`,
+      subtitle: linea.nombreTrabajo || 'Configura la línea',
+      Component: () => <StepLineaServicio index={idx + 1} />,
+      hidden: !orden?.crearLinea,
+    }));
 
   return [...baseSteps, ...lineSteps];
 };

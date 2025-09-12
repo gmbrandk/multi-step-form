@@ -1,5 +1,6 @@
 // StepLineaServicio.jsx
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
+import { useRenderLogger } from '../../utils/useRenderLogger';
 import { SchemaForm } from './SchemaForm';
 
 const fields = [
@@ -46,6 +47,7 @@ const fields = [
 ];
 
 export function StepLineaServicio({ index }) {
+  useRenderLogger('StepLineaServicio');
   const { orden, handleChangeLinea, handleAgregarLinea } =
     useOrdenServicioContext();
   const linea = orden.lineas[index];

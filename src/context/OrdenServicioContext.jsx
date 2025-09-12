@@ -118,6 +118,7 @@ export function OrdenServicioProvider({
   const value = useMemo(
     () => ({
       orden,
+      setOrden, // 👈 lo exponemos
       crearCliente, // 👈 aquí se expone
       crearEquipo, // 👈 aquí lo expones
       handleChangeOrden,
