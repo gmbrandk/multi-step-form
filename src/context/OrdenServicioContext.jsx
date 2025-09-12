@@ -1,4 +1,5 @@
 import { getClienteService } from '../services/clienteService';
+import { getEquipoService } from '../services/equipoService'; // 👈
 
 import {
   createContext,
@@ -30,6 +31,21 @@ export function OrdenServicioProvider({
       setOrden((prev) => ({
         ...prev,
         cliente: res.details.cliente, // se guarda el objeto completo con _id
+      }));
+    }
+
+    return res;
+  }, []);
+
+  // 🔹 Crear equipo
+  const crearEquipo = useCallback(async (datosEquipo) => {
+    const service = getEquipoService();
+    const res = await service.crearEquipo(datosEquipo);
+
+    if (res.success) {
+      setOrden((prev) => ({
+        ...prev,
+        equipo: res.details.equipo, // se guarda el objeto completo con _id
       }));
     }
 
@@ -103,6 +119,7 @@ export function OrdenServicioProvider({
     () => ({
       orden,
       crearCliente, // 👈 aquí se expone
+      crearEquipo, // 👈 aquí lo expones
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,

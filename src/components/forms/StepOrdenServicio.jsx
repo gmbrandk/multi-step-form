@@ -12,18 +12,22 @@ export function StepOrdenServicio() {
   const gridTemplate =
     linea.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
 
-  // 🔹 log estratégico para ver el estado de la línea
-  console.group(`📝 StepOrdenServicio`);
-  console.log('values:', linea);
-  console.log('categoria:', linea.categoria);
-  console.log('cantidad:', linea.cantidad);
-  console.groupEnd();
+  // ✅ logs solo en desarrollo
+  if (process.env.NODE_ENV === 'production') {
+    console.group(`📝 StepOrdenServicio`);
+    console.log('values:', linea);
+    console.log('categoria:', linea.categoria);
+    console.log('cantidad:', linea.cantidad);
+    console.groupEnd();
+  }
 
   return (
     <SchemaForm
       values={linea}
       onChange={(field, value) => {
-        console.log(`🔄 StepOrdenServicio.onChange [${field}] =`, value);
+        if (process.env.NODE_ENV === 'production') {
+          console.log(`🔄 StepOrdenServicio.onChange [${field}] =`, value);
+        }
         handleChangeLinea(0, field, value);
       }}
       showDescriptions={false}
@@ -75,7 +79,7 @@ export function StepOrdenServicio() {
           label: { name: 'Cantidad', className: 'sr-only' },
           placeholder: 'Ej: 1',
           gridColumn: '1 / 2',
-          defaultValue: 1, // 🔹 aseguramos un valor válido
+          defaultValue: 1,
           visibleWhen: (values) => values.categoria === 'producto',
         },
         {

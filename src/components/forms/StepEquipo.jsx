@@ -67,10 +67,10 @@ export function StepEquipo() {
 
   return (
     <SchemaForm
-      values={equipo}
+      values={orden.equipo || {}} // 👈 leemos desde el Context
       onChange={(field, value) => {
         prodLog(`🔄 Step2.onChange → ${field}:`, value);
-        handleChangeOrden('equipo', { ...equipo, [field]: value });
+        handleChangeOrden('equipo', { ...orden.equipo, [field]: value });
       }}
       fields={equipoFields}
       gridTemplateColumns="repeat(3, 1fr)"

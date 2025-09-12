@@ -1,6 +1,6 @@
 import { fakeObjectId } from '../../../utils/fakeObjectIds';
 
-const LOCAL_STORAGE_KEY = 'clientes_testing';
+const LOCAL_STORAGE_KEY = 'equipos_testing';
 
 const simularLatencia = (res) =>
   new Promise((resolve) => setTimeout(() => resolve(res), 300));
@@ -8,43 +8,41 @@ const simularLatencia = (res) =>
 const obtenerData = () => {
   const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
   const data = raw ? JSON.parse(raw) : [];
-  console.info(`📦 [clientesProvider] Datos cargados (${data.length})`, data);
+  console.info(`📦 [equiposProvider] Datos cargados (${data.length})`, data);
   return data;
 };
 
 const guardarData = (data) => {
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-  console.info(`💾 [clientesProvider] Datos guardados (${data.length})`, data);
+  console.info(`💾 [equiposProvider] Datos guardados (${data.length})`, data);
 };
 
 export const localStorageProvider = {
-  crearCliente: async (clienteData) => {
-    console.group('🟢 crearCliente');
-    console.log('📥 Datos recibidos (simulación envío backend):', clienteData);
+  crearEquipo: async (equipoData) => {
+    console.group('🟢 crearEquipo');
+    console.log('📥 Datos recibidos (simulación envío backend):', equipoData);
 
     const data = obtenerData();
 
-    const nuevoCliente = {
-      ...clienteData,
+    const nuevoEquipo = {
+      ...equipoData,
       _id: fakeObjectId(), // 👈 aquí generamos el ID como en MongoDB
       fechaRegistro: new Date().toISOString(),
-      estado: 'activo',
-      calificacion: 'regular',
-      isActivo: true,
+      estadoIdentificacion: 'temporal',
     };
 
-    data.push(nuevoCliente);
+    data.push(nuevoEquipo);
     guardarData(data);
 
-    console.log('✅ Cliente creado:', nuevoCliente);
+    console.log('✅ Equipo creado:', nuevoEquipo);
     console.groupEnd();
 
     return simularLatencia({
       success: true,
       ok: true,
-      message: 'Cliente creado correctamente',
-      mensaje: 'Cliente creado correctamente',
-      details: { cliente: nuevoCliente },
+      message: 'Equipo creado correctamente',
+      mensaje: 'Equipo creado correctamente',
+      details: { equipo: nuevoEquipo },
     });
   },
 };
