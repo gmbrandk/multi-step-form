@@ -1,5 +1,4 @@
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
-import { useRenderLogger } from '../../utils/useRenderLogger';
 import { SchemaForm } from './SchemaForm';
 // 🔹 Declaración de campos del cliente
 const clienteFields = [
@@ -48,7 +47,6 @@ const clienteFields = [
 ];
 
 export function StepCliente() {
-  useRenderLogger('StepCliente');
   const { orden, handleChangeOrden } = useOrdenServicioContext();
 
   return (

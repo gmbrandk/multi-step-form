@@ -1,6 +1,5 @@
 // StepLineaServicio.jsx
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
-import { useRenderLogger } from '../../utils/useRenderLogger';
 import { SchemaForm } from './SchemaForm';
 
 const fields = [
@@ -34,24 +33,28 @@ const fields = [
     name: 'precioUnitario',
     type: 'number',
     label: { name: 'Precio unitario', className: 'sr-only' },
-    gridColumn: '2 / 3',
+    gridColumn: (values) =>
+      values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
+    defaultValue: 0,
     defaultValue: 0,
   },
   {
     name: 'subTotal',
     type: 'output',
     label: { name: 'SubTotal', className: 'sr-only' },
-    gridColumn: '3 / 4',
+    gridColumn: (values) =>
+      values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
+    defaultValue: 0,
     defaultValue: 0,
   },
 ];
 
 export function StepLineaServicio({ index }) {
-  useRenderLogger('StepLineaServicio');
   const { orden, handleChangeLinea, handleAgregarLinea } =
     useOrdenServicioContext();
   const linea = orden.lineas[index];
-
+  const gridTemplate =
+    linea.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)';
   if (!linea) {
     return <p>⚠️ No hay datos para esta línea</p>;
   }
@@ -62,7 +65,9 @@ export function StepLineaServicio({ index }) {
         values={linea}
         onChange={(field, value) => handleChangeLinea(index, field, value)}
         fields={fields}
-        gridTemplateColumns="repeat(3, 1fr)"
+        showDescriptions={false}
+        readOnly={false}
+        gridTemplateColumns={gridTemplate}
       />
 
       <button

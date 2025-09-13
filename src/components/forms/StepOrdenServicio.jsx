@@ -1,11 +1,9 @@
 // StepOrdenServicio.jsx
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { createLineaServicio } from '../../domain/createLineaServicio';
-import { useRenderLogger } from '../../utils/useRenderLogger';
 import { SchemaForm } from './SchemaForm';
 
 export function StepOrdenServicio() {
-  useRenderLogger('StepOrdenServicio');
   const { orden, handleChangeLinea } = useOrdenServicioContext();
 
   // 🔹 siempre con defaults si no hay línea

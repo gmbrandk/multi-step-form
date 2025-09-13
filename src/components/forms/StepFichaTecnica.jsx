@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useRenderLogger } from '../../utils/useRenderLogger';
 const baseFicha = {
   cpu: 'Ej: Intel Core i5-10400F',
   ram: 'Ej: 16GB DDR4 3200MHz',
@@ -8,7 +7,6 @@ const baseFicha = {
 };
 
 export function StepFichaTecnica({ onChange }) {
-  useRenderLogger('StepFichaTecnica');
   const [ficha, setFicha] = useState(
     Object.fromEntries(Object.keys(baseFicha).map((k) => [k, '']))
   );
