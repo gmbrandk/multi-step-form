@@ -1,10 +1,12 @@
 // App.jsx
+import { useState } from 'react';
 import { OrdenServicioWizard } from './components/OrdenServicioWizard';
 import {
   OrdenServicioProvider,
   useOrdenServicioContext,
 } from './context/OrdenServicioContext';
 import { baseOrden } from './domain/constants';
+import { localStorageProvider } from './services/clientes/providers/localStorageProvider';
 import {
   generarClienteMock,
   generarEquipoMock,
@@ -35,11 +37,19 @@ function MockButtons() {
       >
         🛠️ Mock Orden
       </button>
+      <button onClick={() => localStorageProvider.resetClientes()}>
+        🧹 Limpiar Clientes Cache
+      </button>
     </div>
   );
 }
 
 export default function App() {
+  const [usuario, setUsuario] = useState(null);
+
+  /* if (!usuario) {
+    return <LoginForm onSuccess={(data) => setUsuario(data.usuario)} />;
+  } */
   return (
     <OrdenServicioProvider defaults={baseOrden}>
       <MockButtons />

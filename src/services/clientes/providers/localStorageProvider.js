@@ -24,9 +24,71 @@ export const localStorageProvider = {
 
     const data = obtenerData();
 
+    // 🔹 Validaciones simples para simular errores
+    if (!clienteData.nombres) {
+      return simularLatencia({
+        success: false,
+        status: 400,
+        code: 'REQUIRED_FIELD',
+        message: 'El campo "nombres" es obligatorio',
+        details: { field: 'nombres' },
+      });
+    }
+
+    if (!clienteData.apellidos) {
+      return simularLatencia({
+        success: false,
+        status: 400,
+        code: 'REQUIRED_FIELD',
+        message: 'El campo "apellidos" es obligatorio',
+        details: { field: 'apellidos' },
+      });
+    }
+
+    if (!/^\d{9}$/.test(clienteData.telefono || '')) {
+      return simularLatencia({
+        success: false,
+        status: 400,
+        code: 'INVALID_PHONE',
+        message: 'El teléfono no es válido',
+        details: { input: clienteData.telefono },
+      });
+    }
+
+    if (!/^\d{8}$/.test(clienteData.dni || '')) {
+      return simularLatencia({
+        success: false,
+        status: 400,
+        code: 'INVALID_DNI',
+        message: 'El DNI no es válido',
+        details: { input: clienteData.dni },
+      });
+    }
+
+    if (data.some((c) => c.dni === clienteData.dni)) {
+      return simularLatencia({
+        success: false,
+        status: 400,
+        code: 'DUPLICATE_DNI',
+        message: 'Ya existe un cliente con este DNI',
+        details: { field: 'dni', value: clienteData.dni },
+      });
+    }
+
+    if (data.some((c) => c.email === clienteData.email)) {
+      return simularLatencia({
+        success: false,
+        status: 400,
+        code: 'DUPLICATE_EMAIL',
+        message: 'Ya existe un cliente con este email',
+        details: { field: 'email', value: clienteData.email },
+      });
+    }
+
+    // 🔹 Si pasa validaciones, crear cliente
     const nuevoCliente = {
       ...clienteData,
-      _id: fakeObjectId(), // 👈 aquí generamos el ID como en MongoDB
+      _id: fakeObjectId(),
       fechaRegistro: new Date().toISOString(),
       estado: 'activo',
       calificacion: 'regular',
@@ -41,10 +103,15 @@ export const localStorageProvider = {
 
     return simularLatencia({
       success: true,
-      ok: true,
+      status: 201,
+      code: 'CLIENTE_CREADO',
       message: 'Cliente creado correctamente',
-      mensaje: 'Cliente creado correctamente',
       details: { cliente: nuevoCliente },
     });
+  },
+  // 🔹 Nuevo método para limpiar storage
+  resetClientes: () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    console.warn('🧹 [clientesProvider] Cache de clientes limpiada');
   },
 };

@@ -7,17 +7,36 @@ export const apiProvider = {
       const res = await axios.post(`${baseURL}/os`, ordenData, {
         withCredentials: true,
       });
-      return res.data; // { success, ok, message, details.orden }
+
+      // 🔹 Caso éxito
+      return {
+        success: true,
+        status: res.status,
+        code: 'ORDEN_SERVICIO_CREADA',
+        message: res.data.message || 'Orden de servicio creada con éxito',
+        details: { orden: res.data.details?.orden },
+      };
     } catch (error) {
       console.error(
         '[❌ ordenServicioApiProvider] Error en crearOrdenServicio:',
         error
       );
-      throw (
-        error.response?.data || {
-          mensaje: 'Error desconocido al crear orden de servicio',
-        }
-      );
+
+      // 🔹 Caso error uniforme
+      const err = error.response?.data || {
+        status: 500,
+        code: 'UNKNOWN_ERROR',
+        message: 'Error desconocido al crear orden de servicio',
+        details: null,
+      };
+
+      return {
+        success: false,
+        status: err.status || 500,
+        code: err.code || 'UNKNOWN_ERROR',
+        message: err.message || 'Error desconocido al crear orden de servicio',
+        details: err.details || null,
+      };
     }
   },
 };

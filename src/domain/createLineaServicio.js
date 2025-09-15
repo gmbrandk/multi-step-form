@@ -2,6 +2,7 @@
 export function createLineaServicio(overrides = {}) {
   return {
     categoria: 'servicio', // default
+    tipoTrabajo: '68afd6a2c19b8c72a13decb0',
     nombreTrabajo: '',
     cantidad: 1, // mínimo 1
     precioUnitario: 0,

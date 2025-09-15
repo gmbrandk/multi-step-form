@@ -19,7 +19,14 @@ export function OrdenServicioProvider({
   const [orden, setOrden] = useState(() => ({
     ...defaults,
     ...initialValues,
-    lineas: initialValues.lineas ?? [],
+    lineas:
+      initialValues.lineas && initialValues.lineas.length > 0
+        ? initialValues.lineas
+        : [
+            typeof defaults.createLineaServicio === 'function'
+              ? defaults.createLineaServicio()
+              : {},
+          ],
   }));
 
   // 🔹 Crear cliente en backend o mock
