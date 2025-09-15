@@ -1,6 +1,7 @@
 // App.jsx
 import { useState } from 'react';
 import { OrdenServicioWizard } from './components/OrdenServicioWizard';
+import { LoginForm } from './components/forms/LoginForm';
 import {
   OrdenServicioProvider,
   useOrdenServicioContext,
@@ -47,9 +48,9 @@ function MockButtons() {
 export default function App() {
   const [usuario, setUsuario] = useState(null);
 
-  /* if (!usuario) {
+  if (!usuario) {
     return <LoginForm onSuccess={(data) => setUsuario(data.usuario)} />;
-  } */
+  }
   return (
     <OrdenServicioProvider defaults={baseOrden}>
       <MockButtons />

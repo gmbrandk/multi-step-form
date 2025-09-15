@@ -53,7 +53,7 @@ export function useOrdenServicioWizard() {
         precioUnitario: l.precioUnitario,
         cantidad: l.cantidad,
       })),
-      tecnico: orden.tecnico || null,
+      tecnico: orden.tecnico || '6811a47aebf66546dbed5910',
       total: orden.total || 0,
       fechaIngreso: orden.fechaIngreso || new Date().toISOString(),
       diagnosticoCliente: orden.diagnosticoCliente || '',
