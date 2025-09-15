@@ -77,20 +77,23 @@ export function StepOrdenServicio() {
           placeholder: 'Ej: 1',
           gridColumn: '1 / 2',
           defaultValue: 1,
+          visibleWhen: (values) => values.categoria === 'producto',
         },
         {
           name: 'precioUnitario',
           type: 'number',
           label: { name: 'Precio unitario', className: 'sr-only' },
           placeholder: 'Ej: 150.00',
-          gridColumn: '2 / 3',
+          gridColumn: (values) =>
+            values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
           defaultValue: 0,
         },
         {
           name: 'subTotal',
           type: 'output',
           label: { name: 'SubTotal', className: 'sr-only' },
-          gridColumn: '3 / 4',
+          gridColumn: (values) =>
+            values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
           defaultValue: 0,
         },
         {

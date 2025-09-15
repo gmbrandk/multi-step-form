@@ -4,10 +4,10 @@ import { getClienteService } from '../services/clienteService';
 import { getEquipoService } from '../services/equipoService';
 import { getOrdenServicioService } from '../services/ordenServicioService';
 
-export function useOrdenServicioWizard() {
+export function useOrdenServicioWizard({ tecnicoId } = {}) {
+  // 👈 recibimos tecnicoId
   const [ids, setIds] = useState({});
 
-  // 👇 Maneja el submit de cada paso
   const handleStepSubmit = (ids, orden) => async (currentStep) => {
     const data = orden[currentStep.id] || {};
 
@@ -19,7 +19,7 @@ export function useOrdenServicioWizard() {
         setIds((prev) => ({ ...prev, clienteId: res.details.cliente._id }));
       } else {
         alert(`❌ Error creando cliente: ${res.message}`);
-        return false; // 👈 evita que avance
+        return false;
       }
     }
 
@@ -34,12 +34,13 @@ export function useOrdenServicioWizard() {
         setIds((prev) => ({ ...prev, equipoId: res.details.equipo._id }));
       } else {
         alert(`❌ Error creando equipo: ${res.message}`);
-        return false; // 👈 evita que avance
+        return false;
       }
     }
+
+    return true;
   };
 
-  // 👇 Maneja el submit final del wizard
   const handleFinalSubmit = async (ids, orden) => {
     const osService = getOrdenServicioService();
 
@@ -53,7 +54,7 @@ export function useOrdenServicioWizard() {
         precioUnitario: l.precioUnitario,
         cantidad: l.cantidad,
       })),
-      tecnico: orden.tecnico || '6811a47aebf66546dbed5910',
+      tecnico: orden.tecnico || tecnicoId, // 👈 aquí usamos el _id pasado
       total: orden.total || 0,
       fechaIngreso: orden.fechaIngreso || new Date().toISOString(),
       diagnosticoCliente: orden.diagnosticoCliente || '',

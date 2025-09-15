@@ -36,7 +36,6 @@ const fields = [
     gridColumn: (values) =>
       values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
     defaultValue: 0,
-    defaultValue: 0,
   },
   {
     name: 'subTotal',
@@ -44,7 +43,6 @@ const fields = [
     label: { name: 'SubTotal', className: 'sr-only' },
     gridColumn: (values) =>
       values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
-    defaultValue: 0,
     defaultValue: 0,
   },
 ];

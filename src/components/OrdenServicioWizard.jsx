@@ -4,9 +4,13 @@ import { useOrdenServicioContext } from '../context/OrdenServicioContext';
 import { useOrdenServicioWizard } from '../hooks/useOrdenServicioWizard';
 import { StepWizardCore } from './StepWizardCore';
 
-export function OrdenServicioWizard() {
+export function OrdenServicioWizard({ tecnicoId }) {
   const { orden } = useOrdenServicioContext();
-  const { ids, handleStepSubmit, handleFinalSubmit } = useOrdenServicioWizard();
+
+  // pasamos tecnicoId al hook
+  const { ids, handleStepSubmit, handleFinalSubmit } = useOrdenServicioWizard({
+    tecnicoId,
+  });
 
   const steps = getSteps(orden);
 
