@@ -41,6 +41,60 @@ export function SchemaForm({
 
         const value = resolveValue(field, values);
 
+        if (type === 'autocomplete') {
+          return (
+            <div
+              key={name}
+              className="autocomplete-wrapper"
+              style={{ gridColumn: column, position: 'relative' }}
+            >
+              <label htmlFor={name} className={label?.className}>
+                {label?.name || label}
+              </label>
+              <input
+                id={name}
+                name={name}
+                type="text"
+                placeholder={field.placeholder}
+                value={value}
+                disabled={readOnly}
+                onChange={(e) => {
+                  onChange(name, e.target.value);
+                  field.onInput?.(e.target.value);
+                }}
+                onKeyDown={field.onKeyDown}
+                onFocus={field.onFocus}
+                onBlur={() => setTimeout(() => field.onBlur?.(), 150)} // opcional para cerrar
+                className="autocomplete-input"
+                autoComplete="off"
+              />
+
+              {field.showDropdown && field.suggestions?.length > 0 && (
+                <ul className="autocomplete-list">
+                  {field.suggestions.map((s, index) => {
+                    const className = `autocomplete-item
+        ${field.activeIndex === index ? 'active' : ''}
+        ${s._source === 'recent' ? 'recent' : 'from-api'}`;
+
+                    return (
+                      <li
+                        key={s._id || s.dni}
+                        onClick={() => field.onSelect?.(s)}
+                        className={className}
+                      >
+                        <span className="dni">{s.dni}</span>
+                        <span className="nombre">
+                          {s.nombres} {s.apellidos}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          );
+        }
+
         // === Renderizado por tipo ===
         if (type === 'checkbox') {
           return (
