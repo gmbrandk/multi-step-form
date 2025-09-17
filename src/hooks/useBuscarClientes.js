@@ -5,8 +5,10 @@ export function useBuscarClientes(dni) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // 🔹 Si el DNI es vacío o muy corto → limpiamos y salimos
     if (!dni || dni.length < 3) {
       setClientes([]);
+      setLoading(false);
       return;
     }
 
@@ -21,27 +23,37 @@ export function useBuscarClientes(dni) {
             signal: controller.signal,
           }
         );
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
+
         if (data.success) {
-          // 👇 etiquetar cada cliente como "api"
           const normalized = (data.details.clientes || []).map((c) => ({
             ...c,
-            _source: 'api',
+            _source: 'api', // 🔖 para saber de dónde viene
           }));
           setClientes(normalized);
+        } else {
+          // en caso de error del backend → limpiamos
+          setClientes([]);
+          console.warn('[useBuscarClientes] Respuesta sin éxito:', data);
         }
       } catch (err) {
-        if (err.name !== 'AbortError') console.error(err);
+        if (err.name !== 'AbortError') {
+          console.error('[useBuscarClientes] Error de fetch:', err);
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    const timeout = setTimeout(fetchClientes, 300); // debounce 300ms
+    // ⏱ debounce de 300ms
+    const timeout = setTimeout(fetchClientes, 300);
 
     return () => {
       clearTimeout(timeout);
-      controller.abort();
+      controller.abort(); // 🛑 cancelamos fetch si cambia el dni rápido
     };
   }, [dni]);
 

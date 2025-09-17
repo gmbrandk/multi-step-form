@@ -17,8 +17,19 @@ export function OrdenServicioWizard({ tecnicoId }) {
   return (
     <StepWizardCore
       steps={steps}
-      onStepSubmit={handleStepSubmit(ids, orden)}
-      onFinalSubmit={() => handleFinalSubmit(ids, orden)}
+      // enviamos una función que reciba currentStep y la derive al hook con la orden actual
+      onStepSubmit={(currentStep) => handleStepSubmit(currentStep, orden)}
+      onFinalSubmit={() => handleFinalSubmit(orden)}
+      getNextLabel={(currentStep) => {
+        if (currentStep.id === 'cliente') {
+          return orden?.cliente?._id ? 'Siguiente' : 'Crear Cliente';
+        }
+        if (currentStep.id === 'equipo') {
+          return orden?.equipo?._id ? 'Siguiente' : 'Registrar Equipo';
+        }
+        return 'Siguiente';
+      }}
+      getSubmitLabel={() => 'Finalizar Orden'}
     />
   );
 }

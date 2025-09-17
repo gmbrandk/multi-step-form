@@ -1,16 +1,44 @@
+// src/components/forms/StepCliente.jsx
 import { useEffect, useState } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { useBuscarClientes } from '../../hooks/useBuscarClientes';
 import { SchemaForm } from './SchemaForm';
 
 export function StepCliente() {
-  const { orden, handleChangeOrden } = useOrdenServicioContext();
+  const { orden, handleChangeOrden, resetClienteId } =
+    useOrdenServicioContext();
   const cliente = orden.cliente || {};
   const { clientes } = useBuscarClientes(cliente.dni);
+  const [dniBusqueda, setDniBusqueda] = useState(cliente.dni || '');
   const [showDropdown, setShowDropdown] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [recentClients, setRecentClients] = useState([]);
+
+  // === SINCRONIZA SOLO RESULTADOS DE API ===
+  useEffect(() => {
+    if (dniBusqueda.length >= 4 && clientes.length > 0) {
+      setSuggestions(clientes);
+      setShowDropdown(true);
+    } else if (dniBusqueda.length >= 4 && clientes.length === 0) {
+      setSuggestions([]);
+      setShowDropdown(false);
+    }
+  }, [dniBusqueda, clientes]);
+
+  // === CONTROL DE INPUT CON DEBOUNCE ===
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      // solo buscamos si hay 4+ dígitos
+      if (cliente.dni && cliente.dni.length >= 4) {
+        setDniBusqueda(cliente.dni);
+      } else {
+        setDniBusqueda('');
+      }
+    }, 300); // debounce 300ms
+
+    return () => clearTimeout(handler);
+  }, [cliente.dni]);
 
   // cargar historial desde localStorage
   useEffect(() => {
@@ -18,20 +46,30 @@ export function StepCliente() {
     if (stored) setRecentClients(JSON.parse(stored));
   }, []);
 
+  const handleDniChange = (e) => {
+    const nuevoDni = e.target.value;
+
+    if (cliente.dni !== nuevoDni) {
+      resetClienteId();
+      console.log('[StepCliente] DNI cambiado, clienteId reseteado');
+    }
+
+    handleChangeOrden('cliente', { ...cliente, dni: nuevoDni });
+  };
+
   const saveRecentClient = (c) => {
     let updated = [
-      { ...c, _source: 'recent' }, // 👈 marcamos origen
+      { ...c, _source: 'recent' },
       ...recentClients.filter((rc) => rc.dni !== c.dni),
     ];
-
-    if (updated.length > 10) updated = updated.slice(0, 10); // máximo 10
-
+    if (updated.length > 10) updated = updated.slice(0, 10);
     setRecentClients(updated);
     localStorage.setItem('recentClients', JSON.stringify(updated));
   };
 
   const handleSelectCliente = (c) => {
     handleChangeOrden('cliente', {
+      _id: c._id,
       dni: c.dni,
       nombres: c.nombres,
       apellidos: c.apellidos,
@@ -40,32 +78,29 @@ export function StepCliente() {
       direccion: c.direccion ?? '',
     });
 
-    saveRecentClient(c); // 👈 guardar en historial
+    saveRecentClient(c);
     setShowDropdown(false);
     setActiveIndex(-1);
+
+    console.log('👤 Cliente seleccionado:', c);
   };
 
   const handleInputDNI = (value) => {
     if (value.length >= 4) {
-      // 👇 mostrar resultados de la API
       setSuggestions(clientes);
       setShowDropdown(true);
     } else if (value.length === 0 && recentClients.length > 0) {
-      // 👇 input vacío → mostrar historial
       setSuggestions(recentClients);
       setShowDropdown(true);
     } else {
-      // 👇 menos de 4 chars y no vacío → ocultar
       setSuggestions([]);
       setShowDropdown(false);
     }
-
-    setActiveIndex(-1); // siempre reset cursor
+    setActiveIndex(-1);
   };
 
   const handleKeyDown = (e) => {
     if (!showDropdown || suggestions.length === 0) return;
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex((prev) => (prev + 1) % suggestions.length);
@@ -106,11 +141,12 @@ export function StepCliente() {
       placeholder: 'Ej: 45591954',
       gridColumn: '1 / 4',
       suggestions,
+      onChange: handleDniChange,
       onInput: handleInputDNI,
       onSelect: handleSelectCliente,
       onKeyDown: handleKeyDown,
-      onFocus: handleFocus, // 👈 mostrar historial
-      onBlur: handleBlur, // 👈 lo pasamos al input
+      onFocus: handleFocus,
+      onBlur: handleBlur,
       activeIndex,
       showDropdown,
     },

@@ -1,6 +1,4 @@
-import { getClienteService } from '../services/clienteService';
-import { getEquipoService } from '../services/equipoService'; // 👈
-
+// src/context/OrdenServicioContext.jsx
 import {
   createContext,
   useCallback,
@@ -8,6 +6,11 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { getClienteService } from '../services/clienteService';
+import { getEquipoService } from '../services/equipoService';
+
+// 👇 Importa tu hook del wizard
+import { useOrdenServicioWizard } from '../hooks/useOrdenServicioWizard';
 
 const OrdenServicioContext = createContext();
 
@@ -29,6 +32,10 @@ export function OrdenServicioProvider({
           ],
   }));
 
+  // 👇 Instancia el wizard aquí una sola vez
+  const { ids, handleStepSubmit, handleFinalSubmit, resetClienteId } =
+    useOrdenServicioWizard();
+
   // 🔹 Crear cliente en backend o mock
   const crearCliente = useCallback(async (datosCliente) => {
     const service = getClienteService();
@@ -37,7 +44,7 @@ export function OrdenServicioProvider({
     if (res.success) {
       setOrden((prev) => ({
         ...prev,
-        cliente: res.details.cliente, // se guarda el objeto completo con _id
+        cliente: res.details.cliente,
       }));
     }
 
@@ -52,7 +59,7 @@ export function OrdenServicioProvider({
     if (res.success) {
       setOrden((prev) => ({
         ...prev,
-        equipo: res.details.equipo, // se guarda el objeto completo con _id
+        equipo: res.details.equipo,
       }));
     }
 
@@ -77,7 +84,6 @@ export function OrdenServicioProvider({
         const current = rawLineas[idx] ?? {};
         const updatedLinea = { ...current, [field]: value };
 
-        // 🔹 recalcular subtotal si corresponde
         if (field === 'cantidad' || field === 'precioUnitario') {
           const cantidad =
             field === 'cantidad'
@@ -125,19 +131,29 @@ export function OrdenServicioProvider({
   const value = useMemo(
     () => ({
       orden,
-      setOrden, // 👈 lo exponemos
-      crearCliente, // 👈 aquí se expone
-      crearEquipo, // 👈 aquí lo expones
+      setOrden,
+      crearCliente,
+      crearEquipo,
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
+      // 👇 Exporta wizard state + handlers al contexto
+      ids,
+      handleStepSubmit,
+      handleFinalSubmit,
+      resetClienteId,
     }),
     [
       orden,
       crearCliente,
+      crearEquipo,
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
+      ids,
+      handleStepSubmit,
+      handleFinalSubmit,
+      resetClienteId,
     ]
   );
 

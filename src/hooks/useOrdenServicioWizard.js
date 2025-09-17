@@ -5,34 +5,100 @@ import { getEquipoService } from '../services/equipoService';
 import { getOrdenServicioService } from '../services/ordenServicioService';
 
 export function useOrdenServicioWizard({ tecnicoId } = {}) {
-  // 👈 recibimos tecnicoId
   const [ids, setIds] = useState({});
 
-  const handleStepSubmit = (ids, orden) => async (currentStep) => {
+  const resetClienteId = () => {
+    setIds((prev) => {
+      if (!prev.clienteId) return prev;
+      console.log('[Wizard] 🔄 ClienteId reseteado por cambio de DNI');
+      const { clienteId, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  // Ahora handleStepSubmit usa el ids interno (NO se le pasa ids desde afuera)
+  const handleStepSubmit = async (currentStep, orden) => {
+    console.log(`[Wizard] Submitting step: ${currentStep.id}`);
+    console.log('[Wizard] Orden actual:', orden);
+    console.log('[Wizard] IDs actuales:', ids);
+
     const data = orden[currentStep.id] || {};
 
+    // === CLIENTE ===
     if (currentStep.id === 'cliente') {
-      const res = await getClienteService().crearCliente(data);
+      const dataId = data?._id;
 
+      // Si orden trae un _id (selección desde autocomplete),
+      // sincronizamos ids: si difiere actualizamos; si coincide skip.
+      if (dataId) {
+        if (ids.clienteId && ids.clienteId === dataId) {
+          console.log('👤 Cliente ya procesado y coincide:', dataId);
+          return true;
+        }
+        console.log(
+          '👤 Cliente detectado en orden (actualizando ids):',
+          dataId
+        );
+        setIds((prev) => ({ ...prev, clienteId: dataId }));
+        return true;
+      }
+
+      // Si no hay data._id pero ya tenemos clienteId creado previamente → skip
+      if (ids.clienteId) {
+        console.log('⚡ Cliente ya procesado → skip', ids.clienteId);
+        return true;
+      }
+
+      // Ningún id: crear cliente nuevo
+      console.log('🆕 Creando nuevo cliente...', data);
+      const res = await getClienteService().crearCliente(data);
       if (res.success) {
-        alert('✅ Cliente creado correctamente');
-        setIds((prev) => ({ ...prev, clienteId: res.details.cliente._id }));
+        const nuevoId = res.details.cliente._id;
+        console.log('✅ Cliente creado:', nuevoId);
+        setIds((prev) => ({ ...prev, clienteId: nuevoId }));
+        return true;
       } else {
-        alert(`❌ Error creando cliente: ${res.message}`);
+        console.error('❌ Error creando cliente:', res.message);
         return false;
       }
     }
 
+    // === EQUIPO ===
     if (currentStep.id === 'equipo') {
+      // Si equipo ya está en orden (seleccionado existente)
+      if (orden.equipo?._id) {
+        console.log('💻 Equipo existente detectado:', orden.equipo._id);
+        setIds((prev) => ({ ...prev, equipoId: orden.equipo._id }));
+        return true;
+      }
+
+      // Para crear equipo necesitamos el clienteId: preferimos ids.clienteId, sino usamos orden.cliente._id
+      const clienteIdParaEquipo = ids.clienteId || orden.cliente?._id;
+      if (!clienteIdParaEquipo) {
+        console.error('❌ Falta clienteId para crear equipo');
+        alert(
+          'Por favor seleccione o cree un cliente antes de registrar el equipo.'
+        );
+        return false;
+      }
+
+      console.log('🆕 Creando nuevo equipo...', {
+        ...orden.equipo,
+        clienteActual: clienteIdParaEquipo,
+      });
+
       const res = await getEquipoService().crearEquipo({
         ...orden.equipo,
-        clienteActual: ids.clienteId,
+        clienteActual: clienteIdParaEquipo,
       });
 
       if (res.success) {
-        alert('✅ Equipo registrado correctamente');
-        setIds((prev) => ({ ...prev, equipoId: res.details.equipo._id }));
+        const nuevo = res.details.equipo;
+        console.log('✅ Equipo creado:', nuevo);
+        setIds((prev) => ({ ...prev, equipoId: nuevo._id }));
+        return true;
       } else {
+        console.error('❌ Error creando equipo:', res.message);
         alert(`❌ Error creando equipo: ${res.message}`);
         return false;
       }
@@ -41,7 +107,12 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     return true;
   };
 
-  const handleFinalSubmit = async (ids, orden) => {
+  // handleFinalSubmit ahora recibe orden y usa ids interno
+  const handleFinalSubmit = async (orden) => {
+    console.log('🚀 Submitting Orden de Servicio final...');
+    console.log('[Wizard] IDs finales:', ids);
+    console.log('[Wizard] Orden final:', orden);
+
     const osService = getOrdenServicioService();
 
     const payload = {
@@ -54,7 +125,7 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
         precioUnitario: l.precioUnitario,
         cantidad: l.cantidad,
       })),
-      tecnico: orden.tecnico || tecnicoId, // 👈 aquí usamos el _id pasado
+      tecnico: orden.tecnico || tecnicoId,
       total: orden.total || 0,
       fechaIngreso: orden.fechaIngreso || new Date().toISOString(),
       diagnosticoCliente: orden.diagnosticoCliente || '',
@@ -66,15 +137,15 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     const res = await osService.crearOrdenServicio(payload);
 
     if (res.success) {
-      alert('✅ Orden de servicio creada con éxito');
+      console.log('✅ Orden de servicio creada con éxito:', res.details.orden);
       setIds((prev) => ({ ...prev, ordenId: res.details.orden._id }));
+      return res;
     } else {
+      console.error('❌ Error creando orden de servicio:', res.message);
       alert(`❌ Error creando orden: ${res.message}`);
       return false;
     }
-
-    return res;
   };
 
-  return { ids, handleStepSubmit, handleFinalSubmit };
+  return { ids, handleStepSubmit, handleFinalSubmit, resetClienteId };
 }

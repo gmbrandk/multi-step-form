@@ -5,7 +5,14 @@ import { useFramerStepAnimation } from '../logic/useFramerStepAnimation';
 import { getClienteService } from '../services/clienteService';
 import { ProgressBar } from './Progressbar';
 
-export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
+export function StepWizardCore({
+  steps,
+  onStepSubmit,
+  onFinalSubmit,
+  getNextLabel, // 👈 NUEVO
+  getPrevLabel, // 👈 opcional
+  getSubmitLabel, // 👈 opcional
+}) {
   const [step, setStep] = useState(0);
   const [prevDirection, setPrevDirection] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -20,6 +27,8 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
   const visibleSteps = steps.filter((s) => !s.hidden);
   const CurrentStep =
     visibleSteps[step]?.Component ?? (() => <p>No hay pasos</p>);
+
+  const current = visibleSteps[step];
 
   // auto-focus en cada step
   useEffect(() => {
@@ -54,7 +63,6 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
   };
 
   const handleNext = async () => {
-    const current = visibleSteps[step];
     const done = await onStepSubmit?.(current);
     if (done !== false) {
       goToStep(step + 1, 1);
@@ -116,7 +124,7 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
                     onClick={goPrev}
                     disabled={isAnimating}
                   >
-                    Previous
+                    {getPrevLabel ? getPrevLabel(current) : 'Previous'}
                   </button>
                 )}
                 {step < visibleSteps.length - 1 ? (
@@ -126,7 +134,7 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
                     onClick={handleNext}
                     disabled={isAnimating}
                   >
-                    Next
+                    {getNextLabel ? getNextLabel(current) : 'Next'}
                   </button>
                 ) : (
                   <button
@@ -134,7 +142,7 @@ export function StepWizardCore({ steps, onStepSubmit, onFinalSubmit }) {
                     className="submit action-button"
                     onClick={onFinalSubmit}
                   >
-                    Submit
+                    {getSubmitLabel ? getSubmitLabel(current) : 'Submit'}
                   </button>
                 )}
               </div>
