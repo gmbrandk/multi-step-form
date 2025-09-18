@@ -1,5 +1,4 @@
-// src/components/forms/StepCliente.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { useBuscarClientes } from '../../hooks/useBuscarClientes';
 import { SchemaForm } from './SchemaForm';
@@ -8,53 +7,92 @@ export function StepCliente() {
   const { orden, handleChangeOrden, resetClienteId } =
     useOrdenServicioContext();
   const cliente = orden.cliente || {};
-  const { clientes } = useBuscarClientes(cliente.dni);
   const [dniBusqueda, setDniBusqueda] = useState(cliente.dni || '');
+  const { clientes } = useBuscarClientes(dniBusqueda);
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [recentClients, setRecentClients] = useState([]);
+  const [cacheClientes, setCacheClientes] = useState([]);
+  const [manualClose, setManualClose] = useState(false);
+  const [isFirstFocus, setIsFirstFocus] = useState(true);
 
-  // === SINCRONIZA SOLO RESULTADOS DE API ===
+  const userInitiatedRef = useRef(false);
+
+  // ✅ Reset inicial para evitar dropdown abierto al volver con "Prev"
   useEffect(() => {
-    if (dniBusqueda.length >= 4 && clientes.length > 0) {
-      setSuggestions(clientes);
-      setShowDropdown(true);
-    } else if (dniBusqueda.length >= 4 && clientes.length === 0) {
-      setSuggestions([]);
-      setShowDropdown(false);
+    setShowDropdown(false);
+    setActiveIndex(-1);
+    setManualClose(false);
+    setIsFirstFocus(true);
+  }, []);
+
+  // guarda en cache lo que viene de API
+  useEffect(() => {
+    if (clientes.length > 0) {
+      setCacheClientes(clientes);
     }
-  }, [dniBusqueda, clientes]);
-
-  // === CONTROL DE INPUT CON DEBOUNCE ===
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      // solo buscamos si hay 4+ dígitos
-      if (cliente.dni && cliente.dni.length >= 4) {
-        setDniBusqueda(cliente.dni);
-      } else {
-        setDniBusqueda('');
-      }
-    }, 300); // debounce 300ms
-
-    return () => clearTimeout(handler);
-  }, [cliente.dni]);
+  }, [clientes]);
 
   // cargar historial desde localStorage
   useEffect(() => {
     const stored = localStorage.getItem('recentClients');
-    if (stored) setRecentClients(JSON.parse(stored));
+    if (stored) {
+      setRecentClients(JSON.parse(stored));
+    }
   }, []);
 
-  const handleDniChange = (e) => {
-    const nuevoDni = e.target.value;
+  // sincroniza sugerencias (búsqueda progresiva + regresiva + historial en vacío)
+  useEffect(() => {
+    if (manualClose) return; // ⛔️ no reabrir automáticamente después de un select
 
-    if (cliente.dni !== nuevoDni) {
-      resetClienteId();
-      console.log('[StepCliente] DNI cambiado, clienteId reseteado');
+    const term = dniBusqueda?.trim();
+
+    if (term.length >= 4 && term.length < 8) {
+      // búsqueda en API progresiva
+      setSuggestions(clientes);
+      setShowDropdown(clientes.length > 0);
+    } else if (term.length > 0 && term.length < 4) {
+      // búsqueda regresiva en cache + recientes
+      const combined = [...cacheClientes, ...recentClients];
+      const filtered = combined.filter((c) => c.dni.startsWith(term));
+      setSuggestions(filtered);
+      setShowDropdown(filtered.length > 0);
+    } else if (term.length === 0 && recentClients.length > 0) {
+      if (!userInitiatedRef.current) {
+        // ⛔️ Evitar que se muestre automáticamente al cargar la página o reiniciar el step
+        setSuggestions([]);
+        setShowDropdown(false);
+      } else {
+        // ✅ Mostrar historial solo si el usuario interactuó
+        setSuggestions(recentClients);
+        setShowDropdown(true);
+      }
+    } else {
+      setSuggestions([]);
+      setShowDropdown(false);
     }
 
+    setActiveIndex(-1);
+  }, [dniBusqueda, clientes, recentClients, cacheClientes, manualClose]);
+
+  // ✅ Nuevo handler centralizado para DNI
+  const handleDniChange = (e) => {
+    let nuevoDni = e.target.value.replace(/\D/g, ''); // solo dígitos
+    if (nuevoDni.length > 8) nuevoDni = nuevoDni.slice(0, 8); // máx. 8
+
+    if (cliente.dni !== nuevoDni) resetClienteId();
+
     handleChangeOrden('cliente', { ...cliente, dni: nuevoDni });
+    setDniBusqueda(nuevoDni);
+    setManualClose(false); // habilita reapertura al escribir
+  };
+
+  const handleDniPointerDown = () => {
+    userInitiatedRef.current = true;
+    setIsFirstFocus(false);
+    setManualClose(false);
   };
 
   const saveRecentClient = (c) => {
@@ -79,24 +117,11 @@ export function StepCliente() {
     });
 
     saveRecentClient(c);
+
     setShowDropdown(false);
     setActiveIndex(-1);
-
-    console.log('👤 Cliente seleccionado:', c);
-  };
-
-  const handleInputDNI = (value) => {
-    if (value.length >= 4) {
-      setSuggestions(clientes);
-      setShowDropdown(true);
-    } else if (value.length === 0 && recentClients.length > 0) {
-      setSuggestions(recentClients);
-      setShowDropdown(true);
-    } else {
-      setSuggestions([]);
-      setShowDropdown(false);
-    }
-    setActiveIndex(-1);
+    setDniBusqueda(c.dni);
+    setManualClose(true); // ⛔️ evita reapertura inmediata
   };
 
   const handleKeyDown = (e) => {
@@ -118,21 +143,6 @@ export function StepCliente() {
     }
   };
 
-  const handleFocus = () => {
-    if (cliente.dni?.length >= 4 && clientes.length > 0) {
-      setSuggestions(clientes);
-      setShowDropdown(true);
-    } else if (recentClients.length > 0) {
-      setSuggestions(recentClients);
-      setShowDropdown(true);
-    }
-  };
-
-  const handleBlur = () => {
-    setShowDropdown(false);
-    setActiveIndex(-1);
-  };
-
   const clienteFields = [
     {
       name: 'dni',
@@ -141,14 +151,33 @@ export function StepCliente() {
       placeholder: 'Ej: 45591954',
       gridColumn: '1 / 4',
       suggestions,
+      showDropdown,
+      activeIndex,
       onChange: handleDniChange,
-      onInput: handleInputDNI,
       onSelect: handleSelectCliente,
       onKeyDown: handleKeyDown,
-      onFocus: handleFocus,
-      onBlur: handleBlur,
-      activeIndex,
-      showDropdown,
+      onPointerDown: handleDniPointerDown,
+      onFocus: () => {
+        if (isFirstFocus && !userInitiatedRef.current) {
+          setIsFirstFocus(false);
+          return;
+        }
+        userInitiatedRef.current = false;
+
+        if (dniBusqueda.trim().length === 0 && recentClients.length > 0) {
+          // ✅ si está vacío, mostrar clientes recientes al enfocar
+          setSuggestions(recentClients);
+          setShowDropdown(true);
+        } else if (suggestions.length > 0) {
+          setShowDropdown(true);
+        }
+      },
+      onBlur: () => {
+        setShowDropdown(false);
+        setActiveIndex(-1);
+      },
+      maxLength: 8,
+      inputMode: 'numeric',
     },
     {
       name: 'nombres',
@@ -193,7 +222,6 @@ export function StepCliente() {
         values={cliente}
         onChange={(field, value) => {
           handleChangeOrden('cliente', { ...cliente, [field]: value });
-          if (field === 'dni') setShowDropdown(true);
         }}
         fields={clienteFields}
         gridTemplateColumns="repeat(3, 1fr)"

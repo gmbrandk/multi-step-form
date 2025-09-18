@@ -1,20 +1,38 @@
 import { useEffect, useState } from 'react';
 
-export function useBuscarClientes(dni) {
+export function useBuscarClientes(dni, minLength = 4) {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // 🔹 Si el DNI es vacío o muy corto → limpiamos y salimos
-    if (!dni || dni.length < 3) {
+    if (!dni) {
+      console.log('[useBuscarClientes] No se ingresó DNI, no se busca.');
+      setClientes([]);
+      setLoading(false);
+      return;
+    }
+
+    if (dni.length < minLength) {
+      console.log(
+        `[useBuscarClientes] DNI demasiado corto (${dni.length} dígitos, min=${minLength}), no se busca.`
+      );
+      setClientes([]);
+      setLoading(false);
+      return;
+    }
+
+    if (dni.length === 8) {
+      console.log(
+        `[useBuscarClientes] DNI completo (${dni}), no se buscan sugerencias.`
+      );
       setClientes([]);
       setLoading(false);
       return;
     }
 
     const controller = new AbortController();
-
     const fetchClientes = async () => {
+      console.log(`[useBuscarClientes] Fetching clientes con dni=${dni}`);
       setLoading(true);
       try {
         const res = await fetch(
@@ -27,17 +45,20 @@ export function useBuscarClientes(dni) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
+        console.log('[useBuscarClientes] Respuesta API:', data);
 
         if (data.success) {
           const normalized = (data.details.clientes || []).map((c) => ({
             ...c,
-            _source: 'api', // 🔖 para saber de dónde viene
+            _source: 'api',
           }));
           setClientes(normalized);
+          console.log(
+            `[useBuscarClientes] Clientes seteados: ${normalized.length}`
+          );
         } else {
-          // en caso de error del backend → limpiamos
+          console.warn('[useBuscarClientes] Respuesta sin éxito');
           setClientes([]);
-          console.warn('[useBuscarClientes] Respuesta sin éxito:', data);
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -48,14 +69,14 @@ export function useBuscarClientes(dni) {
       }
     };
 
-    // ⏱ debounce de 300ms
     const timeout = setTimeout(fetchClientes, 300);
 
     return () => {
       clearTimeout(timeout);
-      controller.abort(); // 🛑 cancelamos fetch si cambia el dni rápido
+      controller.abort();
+      console.log('[useBuscarClientes] Cleanup: cancelando fetch');
     };
-  }, [dni]);
+  }, [dni, minLength]);
 
   return { clientes, loading };
 }

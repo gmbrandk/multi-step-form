@@ -1,8 +1,3 @@
-/**
- * SchemaForm: renderiza campos de manera declarativa según `fields`.
- * - Agnóstica: no conoce negocio (usa `values`, `onChange`, `fields`).
- * - En proceso de desacoplar renderers para mejorar escalabilidad.
- */
 export function SchemaForm({
   values = {},
   onChange,
@@ -29,11 +24,8 @@ export function SchemaForm({
     >
       {fields.map((field) => {
         const { name, type, label, className } = field;
-
-        // 1️⃣ Visibilidad condicional
         if (field.visibleWhen && !field.visibleWhen(values)) return null;
 
-        // 2️⃣ Grid dinámico
         const column =
           typeof field.gridColumn === 'function'
             ? field.gridColumn(values)
@@ -41,6 +33,7 @@ export function SchemaForm({
 
         const value = resolveValue(field, values);
 
+        // === Autocomplete ===
         if (type === 'autocomplete') {
           return (
             <div
@@ -60,11 +53,12 @@ export function SchemaForm({
                 disabled={readOnly}
                 onChange={(e) => {
                   onChange(name, e.target.value);
-                  field.onInput?.(e.target.value);
+                  field.onChange?.(e);
                 }}
                 onKeyDown={field.onKeyDown}
+                onPointerDown={field.onPointerDown}
                 onFocus={field.onFocus}
-                onBlur={() => setTimeout(() => field.onBlur?.(), 150)} // opcional para cerrar
+                onBlur={field.onBlur}
                 className="autocomplete-input"
                 autoComplete="off"
               />
@@ -72,15 +66,19 @@ export function SchemaForm({
               {field.showDropdown && field.suggestions?.length > 0 && (
                 <ul className="autocomplete-list">
                   {field.suggestions.map((s, index) => {
-                    const className = `autocomplete-item
-        ${field.activeIndex === index ? 'active' : ''}
-        ${s._source === 'recent' ? 'recent' : 'from-api'}`;
+                    const itemClass = `autocomplete-item
+                      ${field.activeIndex === index ? 'active' : ''}
+                      ${s._source === 'recent' ? 'recent' : 'from-api'}`;
 
                     return (
                       <li
-                        key={s._id || s.dni}
-                        onClick={() => field.onSelect?.(s)}
-                        className={className}
+                        key={`${s._id || 'local'}-${s.dni}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          field.onSelect?.(s);
+                          field.onBlur?.();
+                        }}
+                        className={itemClass}
                       >
                         <span className="dni">{s.dni}</span>
                         <span className="nombre">
@@ -95,7 +93,7 @@ export function SchemaForm({
           );
         }
 
-        // === Renderizado por tipo ===
+        // === Otros tipos de campo ===
         if (type === 'checkbox') {
           return (
             <div
@@ -114,10 +112,7 @@ export function SchemaForm({
                   type="checkbox"
                   checked={!!value}
                   disabled={readOnly}
-                  onChange={(e) => {
-                    console.log(`☑️ Checkbox ${name} →`, e.target.checked);
-                    onChange(name, e.target.checked); // 👈 envía true/false
-                  }}
+                  onChange={(e) => onChange(name, e.target.checked)}
                 />
                 <span>{label?.name || label}</span>
               </label>
@@ -200,7 +195,7 @@ export function SchemaForm({
           );
         }
 
-        // input genérico (text, number, datetime-local, etc.)
+        // === Input genérico ===
         return (
           <div key={name} style={{ gridColumn: column }}>
             <label htmlFor={name} className={label?.className}>
@@ -215,6 +210,8 @@ export function SchemaForm({
               disabled={readOnly}
               onChange={(e) => onChange(name, e.target.value)}
               style={{ width: '100%' }}
+              maxLength={field.maxLength} // ✅ soporta atributos adicionales
+              inputMode={field.inputMode} // ✅ soporta atributos adicionales
             />
             {showDescriptions && field.description && (
               <small>{field.description}</small>
