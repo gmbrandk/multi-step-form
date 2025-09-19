@@ -1,3 +1,5 @@
+import { AutocompleteField } from './AutoCompleteField';
+
 export function SchemaForm({
   values = {},
   onChange,
@@ -33,67 +35,45 @@ export function SchemaForm({
 
         const value = resolveValue(field, values);
 
-        // === Autocomplete ===
+        // 🔹 Debug estratégico
+        // console.log('[SchemaForm:renderField]', {
+        //   name,
+        //   type,
+        //   column,
+        //   value,
+        //   hasSuggestions: !!field.suggestions,
+        //   suggestionsLength: field.suggestions?.length,
+        //   showDropdown: field.showDropdown,
+        // });
+
+        // === Autocomplete externo ===
         if (type === 'autocomplete') {
           return (
-            <div
+            <AutocompleteField
               key={name}
-              className="autocomplete-wrapper"
-              style={{ gridColumn: column, position: 'relative' }}
-            >
-              <label htmlFor={name} className={label?.className}>
-                {label?.name || label}
-              </label>
-              <input
-                id={name}
-                name={name}
-                type="text"
-                placeholder={field.placeholder}
-                value={value}
-                disabled={readOnly}
-                onChange={(e) => {
-                  onChange(name, e.target.value);
-                  field.onChange?.(e);
-                }}
-                onKeyDown={field.onKeyDown}
-                onPointerDown={field.onPointerDown}
-                onFocus={field.onFocus}
-                onBlur={field.onBlur}
-                className="autocomplete-input"
-                autoComplete="off"
-              />
-
-              {field.showDropdown && field.suggestions?.length > 0 && (
-                <ul className="autocomplete-list">
-                  {field.suggestions.map((s, index) => {
-                    const itemClass = `autocomplete-item
-                      ${field.activeIndex === index ? 'active' : ''}
-                      ${s._source === 'recent' ? 'recent' : 'from-api'}`;
-
-                    return (
-                      <li
-                        key={`${s._id || 'local'}-${s.dni}`}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          field.onSelect?.(s);
-                          field.onBlur?.();
-                        }}
-                        className={itemClass}
-                      >
-                        <span className="dni">{s.dni}</span>
-                        <span className="nombre">
-                          {s.nombres} {s.apellidos}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
+              id={name}
+              label={label}
+              placeholder={field.placeholder}
+              value={value}
+              disabled={readOnly}
+              suggestions={field.suggestions}
+              showDropdown={field.showDropdown}
+              activeIndex={field.activeIndex}
+              gridColumn={column} // 🔹 ahora configurable
+              onChange={(e) => {
+                onChange(name, e.target.value);
+                field.onChange?.(e);
+              }}
+              onKeyDown={field.onKeyDown}
+              onPointerDown={field.onPointerDown}
+              onFocus={field.onFocus}
+              onBlur={field.onBlur}
+              onSelect={field.onSelect}
+            />
           );
         }
 
-        // === Otros tipos de campo ===
+        // === Checkbox ===
         if (type === 'checkbox') {
           return (
             <div
@@ -123,6 +103,7 @@ export function SchemaForm({
           );
         }
 
+        // === Select ===
         if (type === 'select') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -150,6 +131,7 @@ export function SchemaForm({
           );
         }
 
+        // === Textarea ===
         if (type === 'textarea') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -172,6 +154,7 @@ export function SchemaForm({
           );
         }
 
+        // === Output ===
         if (type === 'output') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -210,8 +193,8 @@ export function SchemaForm({
               disabled={readOnly}
               onChange={(e) => onChange(name, e.target.value)}
               style={{ width: '100%' }}
-              maxLength={field.maxLength} // ✅ soporta atributos adicionales
-              inputMode={field.inputMode} // ✅ soporta atributos adicionales
+              maxLength={field.maxLength}
+              inputMode={field.inputMode}
             />
             {showDescriptions && field.description && (
               <small>{field.description}</small>
