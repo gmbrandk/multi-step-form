@@ -59,7 +59,10 @@ export function SchemaForm({
               suggestions={field.suggestions}
               showDropdown={field.showDropdown}
               activeIndex={field.activeIndex}
-              gridColumn={column} // 🔹 ahora configurable
+              gridColumn={column}
+              inputMode={field.inputMode}
+              maxLength={field.maxLength}
+              renderSuggestion={field.renderSuggestion} // 👈 nuevo
               onChange={(e) => {
                 onChange(name, e.target.value);
                 field.onChange?.(e);

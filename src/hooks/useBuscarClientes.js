@@ -4,6 +4,7 @@ export function useBuscarClientes(dni, minLength = 4) {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // 🔹 Autocomplete (sugerencias mientras escribe)
   useEffect(() => {
     if (!dni) {
       console.log('[useBuscarClientes] No se ingresó DNI, no se busca.');
@@ -36,9 +37,10 @@ export function useBuscarClientes(dni, minLength = 4) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/clientes/?dni=${dni}`,
+          `http://localhost:5000/api/clientes/search?dni=${dni}&mode=autocomplete`,
           {
             signal: controller.signal,
+            credentials: 'include', // 🔑 cookie de sesión
           }
         );
 
@@ -48,9 +50,9 @@ export function useBuscarClientes(dni, minLength = 4) {
         console.log('[useBuscarClientes] Respuesta API:', data);
 
         if (data.success) {
-          const normalized = (data.details.clientes || []).map((c) => ({
+          const normalized = (data.details.results || []).map((c) => ({
             ...c,
-            _source: 'api',
+            _source: 'autocomplete',
           }));
           setClientes(normalized);
           console.log(
@@ -78,5 +80,23 @@ export function useBuscarClientes(dni, minLength = 4) {
     };
   }, [dni, minLength]);
 
-  return { clientes, loading };
+  // 🔹 Lookup: traer cliente completo por ID
+  const fetchClienteById = async (id) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/clientes/search?id=${id}&mode=lookup`,
+        { credentials: 'include' }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.success && data.details.results.length > 0) {
+        return { ...data.details.results[0], _source: 'lookup' };
+      }
+    } catch (err) {
+      console.error('[useBuscarClientes:lookup] Error:', err);
+    }
+    return null;
+  };
+
+  return { clientes, loading, fetchClienteById };
 }

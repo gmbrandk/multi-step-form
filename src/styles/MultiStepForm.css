@@ -206,12 +206,12 @@ body {
 }
 
 /* Subestilos dentro del item */
-.msform .autocomplete-item .dni {
+.msform .autocomplete-item .left-span {
   font-weight: bold;
   color: #202124;
 }
 
-.msform .autocomplete-item .nombre {
+.msform .autocomplete-item .right-span {
   color: #5f6368;
   font-size: 13px;
 }

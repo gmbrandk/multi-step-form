@@ -8,7 +8,7 @@ export function StepCliente() {
     useOrdenServicioContext();
   const cliente = orden.cliente || {};
   const [dniBusqueda, setDniBusqueda] = useState(cliente.dni || '');
-  const { clientes } = useBuscarClientes(dniBusqueda);
+  const { clientes, fetchClienteById } = useBuscarClientes(dniBusqueda);
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -20,7 +20,7 @@ export function StepCliente() {
 
   const userInitiatedRef = useRef(false);
 
-  // ✅ Reset inicial para evitar dropdown abierto al volver con "Prev"
+  // ✅ Reset inicial
   useEffect(() => {
     setShowDropdown(false);
     setActiveIndex(-1);
@@ -28,14 +28,14 @@ export function StepCliente() {
     setIsFirstFocus(true);
   }, []);
 
-  // guarda en cache lo que viene de API
+  // cache de API
   useEffect(() => {
     if (clientes.length > 0) {
       setCacheClientes(clientes);
     }
   }, [clientes]);
 
-  // cargar historial desde localStorage
+  // historial desde localStorage
   useEffect(() => {
     const stored = localStorage.getItem('recentClients');
     if (stored) {
@@ -43,29 +43,25 @@ export function StepCliente() {
     }
   }, []);
 
-  // sincroniza sugerencias (búsqueda progresiva + regresiva + historial en vacío)
+  // sincroniza sugerencias
   useEffect(() => {
-    if (manualClose) return; // ⛔️ no reabrir automáticamente después de un select
+    if (manualClose) return;
 
     const term = dniBusqueda?.trim();
 
     if (term.length >= 4 && term.length < 8) {
-      // búsqueda en API progresiva
       setSuggestions(clientes);
       setShowDropdown(clientes.length > 0);
     } else if (term.length > 0 && term.length < 4) {
-      // búsqueda regresiva en cache + recientes
       const combined = [...cacheClientes, ...recentClients];
       const filtered = combined.filter((c) => c.dni.startsWith(term));
       setSuggestions(filtered);
       setShowDropdown(filtered.length > 0);
     } else if (term.length === 0 && recentClients.length > 0) {
       if (!userInitiatedRef.current) {
-        // ⛔️ Evitar que se muestre automáticamente al cargar la página o reiniciar el step
         setSuggestions([]);
         setShowDropdown(false);
       } else {
-        // ✅ Mostrar historial solo si el usuario interactuó
         setSuggestions(recentClients);
         setShowDropdown(true);
       }
@@ -77,16 +73,16 @@ export function StepCliente() {
     setActiveIndex(-1);
   }, [dniBusqueda, clientes, recentClients, cacheClientes, manualClose]);
 
-  // ✅ Nuevo handler centralizado para DNI
+  // handler DNI
   const handleDniChange = (e) => {
-    let nuevoDni = e.target.value.replace(/\D/g, ''); // solo dígitos
-    if (nuevoDni.length > 8) nuevoDni = nuevoDni.slice(0, 8); // máx. 8
+    let nuevoDni = e.target.value.replace(/\D/g, '');
+    if (nuevoDni.length > 8) nuevoDni = nuevoDni.slice(0, 8);
 
     if (cliente.dni !== nuevoDni) resetClienteId();
 
     handleChangeOrden('cliente', { ...cliente, dni: nuevoDni });
     setDniBusqueda(nuevoDni);
-    setManualClose(false); // habilita reapertura al escribir
+    setManualClose(false);
   };
 
   const handleDniPointerDown = () => {
@@ -105,23 +101,27 @@ export function StepCliente() {
     localStorage.setItem('recentClients', JSON.stringify(updated));
   };
 
-  const handleSelectCliente = (c) => {
-    handleChangeOrden('cliente', {
-      _id: c._id,
-      dni: c.dni,
-      nombres: c.nombres,
-      apellidos: c.apellidos,
-      telefono: c.telefono,
-      email: c.email,
-      direccion: c.direccion ?? '',
-    });
+  // 🔹 Ahora con lookup
+  const handleSelectCliente = async (c) => {
+    const fullCliente = await fetchClienteById(c._id);
 
-    saveRecentClient(c);
+    const clienteFinal = {
+      _id: fullCliente?._id || c._id,
+      dni: fullCliente?.dni || c.dni,
+      nombres: fullCliente?.nombres || '',
+      apellidos: fullCliente?.apellidos || '',
+      telefono: fullCliente?.telefono || '',
+      email: fullCliente?.email || '',
+      direccion: fullCliente?.direccion || '',
+    };
+
+    handleChangeOrden('cliente', clienteFinal);
+    saveRecentClient(clienteFinal);
 
     setShowDropdown(false);
     setActiveIndex(-1);
-    setDniBusqueda(c.dni);
-    setManualClose(true); // ⛔️ evita reapertura inmediata
+    setDniBusqueda(clienteFinal.dni);
+    setManualClose(true);
   };
 
   const handleKeyDown = (e) => {
@@ -165,7 +165,6 @@ export function StepCliente() {
         userInitiatedRef.current = false;
 
         if (dniBusqueda.trim().length === 0 && recentClients.length > 0) {
-          // ✅ si está vacío, mostrar clientes recientes al enfocar
           setSuggestions(recentClients);
           setShowDropdown(true);
         } else if (suggestions.length > 0) {
@@ -178,6 +177,16 @@ export function StepCliente() {
       },
       maxLength: 8,
       inputMode: 'numeric',
+
+      // 👇 aquí decides cómo se pinta cada cliente
+      renderSuggestion: (cliente) => (
+        <div className="autocomplete-item">
+          <span className="left-span">{cliente.dni}</span>
+          <span className="right-span">
+            {cliente.nombres} {cliente.apellidos}
+          </span>
+        </div>
+      ),
     },
     {
       name: 'nombres',

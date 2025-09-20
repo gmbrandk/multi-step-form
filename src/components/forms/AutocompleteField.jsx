@@ -1,6 +1,6 @@
-// src/components/form/AutocompleteField.jsx
 import { useState } from 'react';
 
+// AutocompleteField.jsx
 export function AutocompleteField({
   id,
   label,
@@ -10,28 +10,22 @@ export function AutocompleteField({
   showDropdown = false,
   activeIndex = -1,
   disabled = false,
-  gridColumn = '1 / 4', // 🔹 se puede sobreescribir desde SchemaForm
+  gridColumn = '1 / 4',
   onChange,
   onSelect,
   onKeyDown,
   onPointerDown,
   onFocus,
   onBlur,
+  inputMode,
+  maxLength,
+  renderSuggestion, // 👈 nuevo
 }) {
   const [internalFocus, setInternalFocus] = useState(false);
 
-  // 🔹 Debug rápido
-  //   console.log('Render AutocompleteField', {
-  //     value,
-  //     suggestionsLength: suggestions.length,
-  //     showDropdown,
-  //     internalFocus,
-  //   });
-
-  // Función para limpiar duplicados (según _id y dni)
   const uniqueSuggestions = suggestions.filter(
     (s, i, arr) =>
-      i === arr.findIndex((t) => t.dni === s.dni && t._id === s._id)
+      i === arr.findIndex((t) => (t._id ? t._id === s._id : t === s))
   );
 
   return (
@@ -58,13 +52,12 @@ export function AutocompleteField({
           onFocus?.(e);
         }}
         onBlur={(e) => {
-          // 🔹 diferir el blur para permitir seleccionar con mouse
           setTimeout(() => setInternalFocus(false), 150);
           onBlur?.(e);
         }}
         autoComplete="off"
-        inputMode="numeric"
-        maxLength={8}
+        inputMode={inputMode}
+        maxLength={maxLength}
         aria-autocomplete="list"
         aria-controls={`${id}-listbox`}
         aria-expanded={showDropdown}
@@ -75,26 +68,26 @@ export function AutocompleteField({
         <ul id={`${id}-listbox`} role="listbox" className="autocomplete-list">
           {uniqueSuggestions.map((s, index) => {
             const itemClass = `
-      autocomplete-item
-      ${activeIndex === index ? 'active' : ''}
-      ${s._source === 'recent' ? 'recent' : 'from-api'}
-    `;
-
+              autocomplete-item
+              ${activeIndex === index ? 'active' : ''}
+              ${s._source === 'recent' ? 'recent' : 'from-api'}
+            `;
             return (
               <li
-                key={`${s._id || 'local'}-${s.dni}`}
+                key={s._id || `${id}-${index}`}
                 role="option"
                 aria-selected={activeIndex === index}
                 onMouseDown={(e) => {
-                  e.preventDefault(); // evita blur prematuro
+                  e.preventDefault();
                   onSelect?.(s);
                 }}
                 className={itemClass}
               >
-                <span className="dni">{s.dni}</span>
-                <span className="nombre">
-                  {s.nombres} {s.apellidos}
-                </span>
+                {renderSuggestion ? (
+                  renderSuggestion(s) // 👈 lo decide el padre
+                ) : (
+                  <span>{s.label || String(s)}</span> // 👈 fallback
+                )}
               </li>
             );
           })}
