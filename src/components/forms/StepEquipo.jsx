@@ -52,10 +52,22 @@ export function StepEquipo() {
     setActiveIndex(-1);
   }, [nroSerieBusqueda, equipos, cacheEquipos, recentEquipos, manualClose]);
 
+  // 🔹 si el nroSerie cambia y no coincide con el equipo seleccionado → limpiar _id
+  useEffect(() => {
+    if (
+      nroSerieBusqueda &&
+      equipo.nroSerie &&
+      nroSerieBusqueda.toUpperCase() !== equipo.nroSerie.toUpperCase()
+    ) {
+      // si escribo algo distinto → liberar campos
+      handleChangeOrden('equipo', { ...equipo, _id: null });
+    }
+  }, [nroSerieBusqueda]);
+
   const handleNroSerieChange = (e) => {
     const nuevo = e.target.value.toUpperCase();
     setNroSerieBusqueda(nuevo);
-    handleChangeOrden('equipo', { ...equipo, nroSerie: nuevo });
+    handleChangeOrden('equipo', { ...equipo, nroSerie: nuevo, _id: null });
     setManualClose(false);
   };
 
@@ -115,6 +127,8 @@ export function StepEquipo() {
     }
   };
 
+  const isEquipoExistente = Boolean(equipo?._id);
+
   const equipoFields = [
     {
       name: 'nroSerie',
@@ -147,36 +161,42 @@ export function StepEquipo() {
           <span className="right-span">{eq.modelo}</span>
         </div>
       ),
+      disabled: false, // 🔹 este siempre habilitado
     },
     {
       name: 'tipo',
       type: 'text',
       placeholder: 'Ej: Laptop',
       gridColumn: '1 / 4',
+      disabled: isEquipoExistente,
     },
     {
       name: 'marca',
       type: 'text',
       placeholder: 'Ej: Toshiba',
       gridColumn: '1 / 4',
+      disabled: isEquipoExistente,
     },
     {
       name: 'modelo',
       type: 'text',
       placeholder: 'Ej: Satellite L45',
       gridColumn: '1 / 4',
+      disabled: isEquipoExistente,
     },
     {
       name: 'sku',
       type: 'text',
       placeholder: 'Ej: L45B4205FL',
       gridColumn: '1 / 4',
+      disabled: isEquipoExistente,
     },
     {
       name: 'macAddress',
       type: 'text',
       placeholder: 'Ej: FA:KE:28:08:25:03',
       gridColumn: '1 / 4',
+      disabled: isEquipoExistente,
     },
     {
       name: 'especificaciones',
@@ -185,6 +205,7 @@ export function StepEquipo() {
       label: { name: 'Agregar especificaciones de equipo' },
       gridColumn: '1 / 4',
       defaultValue: false,
+      disabled: isEquipoExistente,
     },
   ];
 

@@ -42,9 +42,13 @@ export function OrdenServicioProvider({
     const res = await service.crearCliente(datosCliente);
 
     if (res.success) {
+      console.log('[crearCliente] backend devuelve:', res.details.cliente);
       setOrden((prev) => ({
         ...prev,
-        cliente: res.details.cliente,
+        cliente: {
+          ...prev.cliente, // preserva posibles campos locales
+          ...res.details.cliente, // sobrescribe con el cliente real del backend (incluye _id)
+        },
       }));
     }
 
@@ -57,9 +61,13 @@ export function OrdenServicioProvider({
     const res = await service.crearEquipo(datosEquipo);
 
     if (res.success) {
+      console.log('[crearEquipo] backend devuelve:', res.details.equipo);
       setOrden((prev) => ({
         ...prev,
-        equipo: res.details.equipo,
+        equipo: {
+          ...prev.equipo, // preserva datos temporales del formulario
+          ...res.details.equipo, // sobrescribe con datos del backend (incluido _id)
+        },
       }));
     }
 

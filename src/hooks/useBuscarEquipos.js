@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 
-export function useBuscarEquipos(nroSerie, minLength = 3) {
+export function useBuscarEquipos(query, minLength = 3) {
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔹 Autocomplete (sugerencias por nroSerie)
+  // 🔹 Autocomplete con texto libre
   useEffect(() => {
-    if (!nroSerie) {
+    if (!query) {
       setEquipos([]);
       setLoading(false);
       return;
     }
 
-    if (nroSerie.length < minLength) {
+    if (query.length < minLength) {
       setEquipos([]);
       setLoading(false);
       return;
@@ -23,7 +23,9 @@ export function useBuscarEquipos(nroSerie, minLength = 3) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/equipos/search?nroSerie=${nroSerie}&mode=autocomplete&limit=10`,
+          `http://localhost:5000/api/equipos/search?texto=${encodeURIComponent(
+            query
+          )}&mode=autocomplete&limit=10`,
           {
             signal: controller.signal,
             credentials: 'include',
@@ -57,9 +59,9 @@ export function useBuscarEquipos(nroSerie, minLength = 3) {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [nroSerie, minLength]);
+  }, [query, minLength]);
 
-  // 🔹 Lookup: traer equipo completo por ID (más seguro que nroSerie)
+  // 🔹 Lookup: traer equipo completo por ID
   const fetchEquipoById = async (id) => {
     try {
       const res = await fetch(

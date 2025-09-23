@@ -17,6 +17,7 @@ export function StepCliente() {
   const [cacheClientes, setCacheClientes] = useState([]);
   const [manualClose, setManualClose] = useState(false);
   const [isFirstFocus, setIsFirstFocus] = useState(true);
+  const [locked, setLocked] = useState(Boolean(cliente._id)); // 🔹 Estado para bloqueo de campos
 
   const userInitiatedRef = useRef(false);
 
@@ -78,9 +79,20 @@ export function StepCliente() {
     let nuevoDni = e.target.value.replace(/\D/g, '');
     if (nuevoDni.length > 8) nuevoDni = nuevoDni.slice(0, 8);
 
-    if (cliente.dni !== nuevoDni) resetClienteId();
+    if (cliente.dni !== nuevoDni) {
+      resetClienteId();
+      setLocked(false); // desbloquear campos
 
-    handleChangeOrden('cliente', { ...cliente, dni: nuevoDni });
+      // 👇 limpiar _id para que el wizard no piense que es cliente existente
+      handleChangeOrden('cliente', {
+        ...cliente,
+        _id: undefined,
+        dni: nuevoDni,
+      });
+    } else {
+      handleChangeOrden('cliente', { ...cliente, dni: nuevoDni });
+    }
+
     setDniBusqueda(nuevoDni);
     setManualClose(false);
   };
@@ -101,7 +113,7 @@ export function StepCliente() {
     localStorage.setItem('recentClients', JSON.stringify(updated));
   };
 
-  // 🔹 Ahora con lookup
+  // 🔹 Lookup de cliente por ID
   const handleSelectCliente = async (c) => {
     const fullCliente = await fetchClienteById(c._id);
 
@@ -122,6 +134,8 @@ export function StepCliente() {
     setActiveIndex(-1);
     setDniBusqueda(clienteFinal.dni);
     setManualClose(true);
+
+    setLocked(true); // 🔒 bloquear al seleccionar un cliente existente
   };
 
   const handleKeyDown = (e) => {
@@ -177,8 +191,7 @@ export function StepCliente() {
       },
       maxLength: 8,
       inputMode: 'numeric',
-
-      // 👇 aquí decides cómo se pinta cada cliente
+      disabled: false, // DNI siempre editable
       renderSuggestion: (cliente) => (
         <div className="autocomplete-item">
           <span className="left-span">{cliente.dni}</span>
@@ -194,6 +207,7 @@ export function StepCliente() {
       label: { name: 'Nombres', className: 'sr-only' },
       placeholder: 'Ej: Adriana Josefina',
       gridColumn: '1 / 4',
+      disabled: locked,
     },
     {
       name: 'apellidos',
@@ -201,6 +215,7 @@ export function StepCliente() {
       label: { name: 'Apellidos', className: 'sr-only' },
       placeholder: 'Ej: Tudela Gutiérrez',
       gridColumn: '1 / 4',
+      disabled: locked,
     },
     {
       name: 'telefono',
@@ -208,6 +223,7 @@ export function StepCliente() {
       label: { name: 'Teléfono', className: 'sr-only' },
       placeholder: 'Ej: 913458768',
       gridColumn: '1 / 4',
+      disabled: locked,
     },
     {
       name: 'email',
@@ -215,6 +231,7 @@ export function StepCliente() {
       label: { name: 'Email', className: 'sr-only' },
       placeholder: 'Ej: ejemplo@correo.com',
       gridColumn: '1 / 4',
+      disabled: locked,
     },
     {
       name: 'direccion',
@@ -222,6 +239,7 @@ export function StepCliente() {
       label: { name: 'Dirección', className: 'sr-only' },
       placeholder: 'Ej: Av. Siempre Viva 742',
       gridColumn: '1 / 4',
+      disabled: locked,
     },
   ];
 

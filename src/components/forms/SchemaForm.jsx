@@ -35,18 +35,6 @@ export function SchemaForm({
 
         const value = resolveValue(field, values);
 
-        // 🔹 Debug estratégico
-        // console.log('[SchemaForm:renderField]', {
-        //   name,
-        //   type,
-        //   column,
-        //   value,
-        //   hasSuggestions: !!field.suggestions,
-        //   suggestionsLength: field.suggestions?.length,
-        //   showDropdown: field.showDropdown,
-        // });
-
-        // === Autocomplete externo ===
         if (type === 'autocomplete') {
           return (
             <AutocompleteField
@@ -55,14 +43,14 @@ export function SchemaForm({
               label={label}
               placeholder={field.placeholder}
               value={value}
-              disabled={readOnly}
+              disabled={readOnly || field.disabled}
               suggestions={field.suggestions}
               showDropdown={field.showDropdown}
               activeIndex={field.activeIndex}
               gridColumn={column}
               inputMode={field.inputMode}
               maxLength={field.maxLength}
-              renderSuggestion={field.renderSuggestion} // 👈 nuevo
+              renderSuggestion={field.renderSuggestion}
               onChange={(e) => {
                 onChange(name, e.target.value);
                 field.onChange?.(e);
@@ -76,7 +64,6 @@ export function SchemaForm({
           );
         }
 
-        // === Checkbox ===
         if (type === 'checkbox') {
           return (
             <div
@@ -94,7 +81,7 @@ export function SchemaForm({
                   name={name}
                   type="checkbox"
                   checked={!!value}
-                  disabled={readOnly}
+                  disabled={readOnly || field.disabled}
                   onChange={(e) => onChange(name, e.target.checked)}
                 />
                 <span>{label?.name || label}</span>
@@ -106,7 +93,6 @@ export function SchemaForm({
           );
         }
 
-        // === Select ===
         if (type === 'select') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -117,7 +103,7 @@ export function SchemaForm({
                 id={name}
                 name={name}
                 value={value}
-                disabled={readOnly}
+                disabled={readOnly || field.disabled}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%' }}
               >
@@ -134,7 +120,6 @@ export function SchemaForm({
           );
         }
 
-        // === Textarea ===
         if (type === 'textarea') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -146,7 +131,7 @@ export function SchemaForm({
                 name={name}
                 placeholder={field.placeholder}
                 value={value}
-                disabled={readOnly}
+                disabled={readOnly || field.disabled}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%', minHeight: '60px' }}
               />
@@ -157,7 +142,6 @@ export function SchemaForm({
           );
         }
 
-        // === Output ===
         if (type === 'output') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -181,7 +165,6 @@ export function SchemaForm({
           );
         }
 
-        // === Input genérico ===
         return (
           <div key={name} style={{ gridColumn: column }}>
             <label htmlFor={name} className={label?.className}>
@@ -193,7 +176,7 @@ export function SchemaForm({
               type={type || 'text'}
               placeholder={field.placeholder}
               value={value}
-              disabled={readOnly}
+              disabled={readOnly || field.disabled}
               onChange={(e) => onChange(name, e.target.value)}
               style={{ width: '100%' }}
               maxLength={field.maxLength}

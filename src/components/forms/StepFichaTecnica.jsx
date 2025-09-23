@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
+
 const baseFicha = {
   cpu: 'Ej: Intel Core i5-10400F',
   ram: 'Ej: 16GB DDR4 3200MHz',
@@ -6,15 +8,17 @@ const baseFicha = {
   gpu: 'Ej: NVIDIA GeForce RTX 3060',
 };
 
-export function StepFichaTecnica({ onChange }) {
+export function StepFichaTecnica() {
+  const { orden, handleChangeOrden } = useOrdenServicioContext();
   const [ficha, setFicha] = useState(
-    Object.fromEntries(Object.keys(baseFicha).map((k) => [k, '']))
+    orden.fichaTecnica ||
+      Object.fromEntries(Object.keys(baseFicha).map((k) => [k, '']))
   );
 
   const handleChange = (field, value) => {
     const updated = { ...ficha, [field]: value };
     setFicha(updated);
-    if (onChange) onChange(updated);
+    handleChangeOrden('fichaTecnica', updated); // 👈 guarda en orden
   };
 
   return (

@@ -64,15 +64,22 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     }
 
     // === EQUIPO ===
+    // === EQUIPO ===
     if (currentStep.id === 'equipo') {
-      // Si equipo ya está en orden (seleccionado existente)
+      // Caso 1: ya existe un equipo
       if (orden.equipo?._id) {
         console.log('💻 Equipo existente detectado:', orden.equipo._id);
         setIds((prev) => ({ ...prev, equipoId: orden.equipo._id }));
         return true;
       }
 
-      // Para crear equipo necesitamos el clienteId: preferimos ids.clienteId, sino usamos orden.cliente._id
+      // Caso 2: el usuario quiere especificaciones pero aún no hay equipo → NO crear todavía
+      if (orden.equipo?.especificaciones) {
+        console.log('📝 Agregar especificaciones sin crear equipo todavía');
+        return true; // Avanza directamente al step ficha técnica
+      }
+
+      // Caso 3: crear equipo nuevo
       const clienteIdParaEquipo = ids.clienteId || orden.cliente?._id;
       if (!clienteIdParaEquipo) {
         console.error('❌ Falta clienteId para crear equipo');
@@ -99,6 +106,44 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
         return true;
       } else {
         console.error('❌ Error creando equipo:', res.message);
+        alert(`❌ Error creando equipo: ${res.message}`);
+        return false;
+      }
+    }
+
+    // === FICHA TÉCNICA ===
+    if (currentStep.id === 'ficha-tecnica') {
+      const clienteIdParaEquipo = ids.clienteId || orden.cliente?._id;
+      if (!clienteIdParaEquipo) {
+        console.error('❌ Falta clienteId para crear equipo con ficha técnica');
+        alert(
+          'Debe seleccionar o crear un cliente antes de registrar el equipo.'
+        );
+        return false;
+      }
+
+      console.log('🛠️ Creando equipo con ficha técnica...', {
+        ...orden.equipo,
+        fichaTecnicaManual: orden.fichaTecnica, // 👈 la data del paso
+        clienteActual: clienteIdParaEquipo,
+      });
+
+      const res = await getEquipoService().crearEquipo({
+        ...orden.equipo,
+        fichaTecnicaManual: orden.fichaTecnica,
+        clienteActual: clienteIdParaEquipo,
+      });
+
+      if (res.success) {
+        const nuevo = res.details.equipo;
+        console.log('✅ Equipo creado con ficha técnica:', nuevo);
+        setIds((prev) => ({ ...prev, equipoId: nuevo._id }));
+        return true;
+      } else {
+        console.error(
+          '❌ Error creando equipo con ficha técnica:',
+          res.message
+        );
         alert(`❌ Error creando equipo: ${res.message}`);
         return false;
       }

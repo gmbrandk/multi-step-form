@@ -25,7 +25,15 @@ export function OrdenServicioWizard({ tecnicoId }) {
           return orden?.cliente?._id ? 'Siguiente' : 'Crear Cliente';
         }
         if (currentStep.id === 'equipo') {
-          return orden?.equipo?._id ? 'Siguiente' : 'Registrar Equipo';
+          if (!orden?.equipo?._id) {
+            return orden?.equipo?.especificaciones ? 'Agregar' : 'Crear Equipo';
+          }
+          return orden?.equipo?.especificaciones
+            ? 'Agregar especificaciones'
+            : 'Siguiente';
+        }
+        if (currentStep.id === 'ficha-tecnica') {
+          return 'Registrar Equipo'; // 👈 clave
         }
         return 'Siguiente';
       }}
