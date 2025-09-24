@@ -19,7 +19,8 @@ export function AutocompleteField({
   onBlur,
   inputMode,
   maxLength,
-  renderSuggestion, // 👈 nuevo
+  renderSuggestion,
+  inputRef, // 👈 añadido
 }) {
   const [internalFocus, setInternalFocus] = useState(false);
 
@@ -62,6 +63,7 @@ export function AutocompleteField({
         aria-controls={`${id}-listbox`}
         aria-expanded={showDropdown}
         className="autocomplete-input"
+        ref={inputRef} // 👈 ahora sí se conecta con fieldRefs
       />
 
       {showDropdown && suggestions.length > 0 && internalFocus && (
@@ -84,9 +86,9 @@ export function AutocompleteField({
                 className={itemClass}
               >
                 {renderSuggestion ? (
-                  renderSuggestion(s) // 👈 lo decide el padre
+                  renderSuggestion(s)
                 ) : (
-                  <span>{s.label || String(s)}</span> // 👈 fallback
+                  <span>{s.label || String(s)}</span>
                 )}
               </li>
             );

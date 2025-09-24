@@ -1,70 +1,61 @@
 import { useEffect, useState } from 'react';
 
+const baseUrl = import.meta.env.VITE_API_URL;
+
 export function useBuscarClientes(dni, minLength = 4) {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [details, setDetails] = useState(null); // 🔹 guarda todo el details
+  const [isNew, setIsNew] = useState(false); // 🔹 flag directo
 
-  // 🔹 Autocomplete (sugerencias mientras escribe)
   useEffect(() => {
-    if (!dni) {
-      console.log('[useBuscarClientes] No se ingresó DNI, no se busca.');
+    if (!dni || dni.length < minLength) {
       setClientes([]);
       setLoading(false);
-      return;
-    }
-
-    if (dni.length < minLength) {
-      console.log(
-        `[useBuscarClientes] DNI demasiado corto (${dni.length} dígitos, min=${minLength}), no se busca.`
-      );
-      setClientes([]);
-      setLoading(false);
-      return;
-    }
-
-    if (dni.length === 8) {
-      console.log(
-        `[useBuscarClientes] DNI completo (${dni}), no se buscan sugerencias.`
-      );
-      setClientes([]);
-      setLoading(false);
+      setError(null);
+      setIsNew(false);
+      setDetails(null);
       return;
     }
 
     const controller = new AbortController();
     const fetchClientes = async () => {
-      console.log(`[useBuscarClientes] Fetching clientes con dni=${dni}`);
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/clientes/search?dni=${dni}&mode=autocomplete`,
+          `${baseUrl}/api/clientes/search?dni=${dni}&mode=autocomplete`,
           {
             signal: controller.signal,
-            credentials: 'include', // 🔑 cookie de sesión
+            credentials: 'include',
           }
         );
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
-        console.log('[useBuscarClientes] Respuesta API:', data);
 
         if (data.success) {
-          const normalized = (data.details.results || []).map((c) => ({
-            ...c,
-            _source: 'autocomplete',
-          }));
-          setClientes(normalized);
-          console.log(
-            `[useBuscarClientes] Clientes seteados: ${normalized.length}`
+          const raw = data.details || {};
+          setClientes(
+            (raw.results || []).map((c) => ({
+              ...c,
+              _source: 'autocomplete',
+            }))
           );
+          setIsNew(Boolean(raw.isNew));
+          setDetails(raw);
         } else {
-          console.warn('[useBuscarClientes] Respuesta sin éxito');
           setClientes([]);
+          setIsNew(false);
+          setDetails(null);
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
-          console.error('[useBuscarClientes] Error de fetch:', err);
+          setError(err);
+          setClientes([]);
+          setIsNew(false);
+          setDetails(null);
         }
       } finally {
         setLoading(false);
@@ -72,31 +63,28 @@ export function useBuscarClientes(dni, minLength = 4) {
     };
 
     const timeout = setTimeout(fetchClientes, 300);
-
     return () => {
       clearTimeout(timeout);
       controller.abort();
-      console.log('[useBuscarClientes] Cleanup: cancelando fetch');
     };
-  }, [dni, minLength]);
+  }, [dni, minLength, baseUrl]);
 
-  // 🔹 Lookup: traer cliente completo por ID
   const fetchClienteById = async (id) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/clientes/search?id=${id}&mode=lookup`,
+        `${baseUrl}/api/clientes/search?id=${id}&mode=lookup`,
         { credentials: 'include' }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data.success && data.details.results.length > 0) {
-        return { ...data.details.results[0], _source: 'lookup' };
-      }
+      return data.success && data.details.results.length > 0
+        ? { ...data.details.results[0], _source: 'lookup' }
+        : null;
     } catch (err) {
       console.error('[useBuscarClientes:lookup] Error:', err);
+      return null;
     }
-    return null;
   };
 
-  return { clientes, loading, fetchClienteById };
+  return { clientes, loading, error, isNew, details, fetchClienteById };
 }

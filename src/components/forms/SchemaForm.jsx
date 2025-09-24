@@ -16,6 +16,21 @@ export function SchemaForm({
     return isEmpty ? field.defaultValue ?? '' : v;
   };
 
+  // ⚡ attachRef ahora usa idx estable
+  const attachRef = (field, idx) => {
+    return (el) => {
+      console.log(
+        `[SchemaForm][attachRef] field="${field.name}" idx=${idx} el=`,
+        el
+      );
+      if (typeof field.inputRef === 'function') {
+        field.inputRef(el);
+      } else if (field.inputRef && 'current' in field.inputRef) {
+        field.inputRef.current = el;
+      }
+    };
+  };
+
   return (
     <div
       style={{
@@ -24,7 +39,7 @@ export function SchemaForm({
         columnGap: '8px',
       }}
     >
-      {fields.map((field) => {
+      {fields.map((field, idx) => {
         const { name, type, label, className } = field;
         if (field.visibleWhen && !field.visibleWhen(values)) return null;
 
@@ -60,6 +75,7 @@ export function SchemaForm({
               onFocus={field.onFocus}
               onBlur={field.onBlur}
               onSelect={field.onSelect}
+              inputRef={attachRef(field, idx)} // 👈 usamos inputRef aquí
             />
           );
         }
@@ -83,6 +99,7 @@ export function SchemaForm({
                   checked={!!value}
                   disabled={readOnly || field.disabled}
                   onChange={(e) => onChange(name, e.target.checked)}
+                  ref={attachRef(field, idx)}
                 />
                 <span>{label?.name || label}</span>
               </label>
@@ -106,6 +123,8 @@ export function SchemaForm({
                 disabled={readOnly || field.disabled}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%' }}
+                onKeyDown={field.onKeyDown}
+                ref={attachRef(field, idx)}
               >
                 {field.options?.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -134,6 +153,8 @@ export function SchemaForm({
                 disabled={readOnly || field.disabled}
                 onChange={(e) => onChange(name, e.target.value)}
                 style={{ width: '100%', minHeight: '60px' }}
+                onKeyDown={field.onKeyDown}
+                ref={attachRef(field, idx)}
               />
               {showDescriptions && field.description && (
                 <small>{field.description}</small>
@@ -178,9 +199,11 @@ export function SchemaForm({
               value={value}
               disabled={readOnly || field.disabled}
               onChange={(e) => onChange(name, e.target.value)}
+              onKeyDown={field.onKeyDown} // 👈 añadir esto
               style={{ width: '100%' }}
               maxLength={field.maxLength}
               inputMode={field.inputMode}
+              ref={attachRef(field, idx)}
             />
             {showDescriptions && field.description && (
               <small>{field.description}</small>
