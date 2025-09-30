@@ -15,6 +15,18 @@ const fields = [
     ],
   },
   {
+    name: 'tipoTrabajo', // ✅ antes estaba mal, repetía "categoria"
+    type: 'select',
+    label: { name: 'Tipo de Trabajo', className: 'sr-only' },
+    gridColumn: '1 / 4',
+    defaultValue: '68afd6a2c19b8c72a13decb0',
+    options: [
+      { value: '68afd6a2c19b8c72a13decb0', label: 'Mantenimiento' },
+      { value: '68afd6a2c19b8c72a13decb1', label: 'Reparación' },
+      { value: '68afd6a2c19b8c72a13decb2', label: 'Repuesto' },
+    ],
+  },
+  {
     name: 'nombreTrabajo',
     type: 'text',
     label: { name: 'Nombre del trabajo', className: 'sr-only' },

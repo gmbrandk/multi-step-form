@@ -19,10 +19,10 @@ export function SchemaForm({
   // ⚡ attachRef ahora usa idx estable
   const attachRef = (field, idx) => {
     return (el) => {
-      console.log(
-        `[SchemaForm][attachRef] field="${field.name}" idx=${idx} el=`,
-        el
-      );
+      // console.log(
+      //   `[SchemaForm][attachRef] field="${field.name}" idx=${idx} el=`,
+      //   el
+      // );
       if (typeof field.inputRef === 'function') {
         field.inputRef(el);
       } else if (field.inputRef && 'current' in field.inputRef) {

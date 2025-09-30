@@ -3,18 +3,21 @@ import { useEffect, useState } from 'react';
 export function useBuscarEquipos(query, minLength = 3) {
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isNew, setIsNew] = useState(false);
 
-  // 🔹 Autocomplete con texto libre
+  // 🔹 Autocomplete con texto libre o nroSerie
   useEffect(() => {
     if (!query) {
       setEquipos([]);
       setLoading(false);
+      setIsNew(false);
       return;
     }
 
     if (query.length < minLength) {
       setEquipos([]);
       setLoading(false);
+      setIsNew(false);
       return;
     }
 
@@ -23,7 +26,7 @@ export function useBuscarEquipos(query, minLength = 3) {
       setLoading(true);
       try {
         const res = await fetch(
-          `http://localhost:5000/api/equipos/search?texto=${encodeURIComponent(
+          `http://localhost:5000/api/equipos/search?nroSerie=${encodeURIComponent(
             query
           )}&mode=autocomplete&limit=10`,
           {
@@ -41,8 +44,10 @@ export function useBuscarEquipos(query, minLength = 3) {
             _source: 'autocomplete',
           }));
           setEquipos(normalized);
+          setIsNew(Boolean(data.details.isNew)); // 👈 guardar flag
         } else {
           setEquipos([]);
+          setIsNew(false);
         }
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -73,11 +78,12 @@ export function useBuscarEquipos(query, minLength = 3) {
       if (data.success && data.details.results.length > 0) {
         return { ...data.details.results[0], _source: 'lookup' };
       }
+      return null;
     } catch (err) {
       console.error('[useBuscarEquipos:lookup] Error:', err);
+      return null;
     }
-    return null;
   };
 
-  return { equipos, loading, fetchEquipoById };
+  return { equipos, loading, isNew, fetchEquipoById };
 }

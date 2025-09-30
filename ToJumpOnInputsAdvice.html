@@ -1,0 +1,171 @@
+<div
+  class="markdown prose dark:prose-invert w-full break-words dark markdown-new-styling"
+>
+  <p data-start="0" data-end="27">Muy buena comparación 👌.</p>
+  <p data-start="29" data-end="74">
+    Lo que hacías en ese
+    <code data-start="50" data-end="67">StepCliente.jsx</code> era:
+  </p>
+  <ul data-start="76" data-end="456">
+    <li data-start="76" data-end="291">
+      <p data-start="78" data-end="132">
+        <strong data-start="78" data-end="129"
+          >Gestionar refs y salto en el propio StepCliente</strong
+        >:
+      </p>
+      <ul data-start="135" data-end="291">
+        <li data-start="135" data-end="169">
+          <p data-start="137" data-end="169">
+            <code data-start="137" data-end="167"
+              >fieldRefs.current[idx] = el;</code
+            >
+          </p>
+        </li>
+        <li data-start="172" data-end="208">
+          <p data-start="174" data-end="208">
+            <code data-start="174" data-end="195">focusNextField(idx)</code> con
+            enter.
+          </p>
+        </li>
+        <li data-start="211" data-end="291">
+          <p data-start="213" data-end="291">
+            <code data-start="213" data-end="222">forEach</code> sobre los
+            <code data-start="233" data-end="248">clienteFields</code> para
+            inyectar
+            <code data-start="263" data-end="274">onKeyDown</code>
+            dinámicamente.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="293" data-end="456">
+      <p data-start="295" data-end="456">
+        O sea, toda la lógica de navegación con Enter vivía en el componente
+        <strong data-start="364" data-end="379">StepCliente</strong>, y se
+        “inyectaba” en los fields manualmente antes de pasar a
+        <code data-start="441" data-end="453">SchemaForm</code>.
+      </p>
+    </li>
+  </ul>
+  <hr data-start="458" data-end="461" />
+  <h3 data-start="463" data-end="535">
+    🔎 Diferencia con la nueva propuesta (centralizar en
+    <code data-start="520" data-end="532">SchemaForm</code>)
+  </h3>
+  <ol data-start="537" data-end="1456">
+    <li data-start="537" data-end="916">
+      <p data-start="540" data-end="575">
+        <strong data-start="540" data-end="573"
+          >Dónde vive la lógica de salto</strong
+        >
+      </p>
+      <ul data-start="579" data-end="812">
+        <li data-start="579" data-end="682">
+          <p data-start="581" data-end="682">
+            Antes → dentro de
+            <code data-start="599" data-end="612">StepCliente</code> (que no
+            debería encargarse de interacciones de UI tan específicas).
+          </p>
+        </li>
+        <li data-start="686" data-end="812">
+          <p data-start="688" data-end="812">
+            Ahora → <code data-start="696" data-end="708">SchemaForm</code> ya
+            sabe cómo manejar Enter en
+            <strong data-start="739" data-end="758">cualquier input</strong>,
+            porque tiene acceso al
+            <code data-start="783" data-end="794">fieldRefs</code> +
+            <code data-start="797" data-end="809">fieldOrder</code>.
+          </p>
+        </li>
+      </ul>
+      <p data-start="817" data-end="916">
+        👉 Esto aplica <strong data-start="832" data-end="839">SRP</strong>:
+        <code data-start="841" data-end="854">StepCliente</code> solo define
+        <strong data-start="867" data-end="881">qué campos</strong> existen, no
+        <strong data-start="894" data-end="902">cómo</strong> se navegan.
+      </p>
+    </li>
+    <li data-start="918" data-end="1196">
+      <p data-start="921" data-end="940">
+        <strong data-start="921" data-end="938">Escalabilidad</strong>
+      </p>
+      <ul data-start="944" data-end="1196">
+        <li data-start="944" data-end="1077">
+          <p data-start="946" data-end="1077">
+            Antes → cada nuevo form (<code data-start="971" data-end="985"
+              >StepVehiculo</code
+            >, <code data-start="987" data-end="1001">StepServicio</code>, etc.)
+            debería repetir el
+            <code data-start="1028" data-end="1037">forEach</code> que mete refs
+            y redefine <code data-start="1063" data-end="1074">onKeyDown</code>.
+          </p>
+        </li>
+        <li data-start="1081" data-end="1196">
+          <p data-start="1083" data-end="1196">
+            Ahora → lo hace una sola vez en
+            <code data-start="1115" data-end="1127">SchemaForm</code>. Todos los
+            formularios heredan ese comportamiento automáticamente.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="1198" data-end="1456">
+      <p data-start="1201" data-end="1224">
+        <strong data-start="1201" data-end="1222">Código más limpio</strong>
+      </p>
+      <ul data-start="1228" data-end="1456">
+        <li data-start="1228" data-end="1331">
+          <p data-start="1230" data-end="1331">
+            Antes →
+            <code data-start="1238" data-end="1251">StepCliente</code> tiene
+            ~100 líneas extra de lógica para refs, keydown, setear
+            <code data-start="1313" data-end="1323">inputRef</code>, etc.
+          </p>
+        </li>
+        <li data-start="1335" data-end="1456">
+          <p data-start="1337" data-end="1456">
+            Ahora →
+            <code data-start="1345" data-end="1358">StepCliente</code> solo arma
+            el schema y pasa los campos. El salto con Enter funciona sin que
+            StepCliente lo sepa.
+          </p>
+        </li>
+      </ul>
+    </li>
+  </ol>
+  <hr data-start="1458" data-end="1461" />
+  <p data-start="1463" data-end="1479">👉 En resumen:</p>
+  <ul data-start="1481" data-end="1765">
+    <li data-start="1481" data-end="1599">
+      <p data-start="1483" data-end="1599">
+        <strong data-start="1483" data-end="1500">Viejo enfoque</strong>: Cada
+        Step (Cliente, Vehículo, etc.) se encarga de manejar refs y Enter →
+        mucho código repetido.
+      </p>
+    </li>
+    <li data-start="1600" data-end="1765">
+      <p data-start="1602" data-end="1765">
+        <strong data-start="1602" data-end="1619">Nuevo enfoque</strong>:
+        <code data-start="1621" data-end="1633">SchemaForm</code> es un
+        <strong data-start="1640" data-end="1669"
+          >form renderer inteligente</strong
+        >
+        → entiende Enter y gestiona refs de forma genérica → StepCliente queda
+        mucho más declarativo.
+      </p>
+    </li>
+  </ul>
+  <hr data-start="1767" data-end="1770" />
+  <p
+    data-start="1772"
+    data-end="1941"
+    data-is-last-node=""
+    data-is-only-node=""
+  >
+    ¿Quieres que te arme el
+    <strong data-start="1796" data-end="1892"
+      >diff claro entre StepCliente "viejo" y StepCliente con la nueva
+      centralización en SchemaForm</strong
+    >, para que veas cuántas líneas dejas de escribir?
+  </p>
+</div>

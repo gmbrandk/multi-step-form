@@ -21,6 +21,22 @@ export function StepEquipo() {
 
   const userInitiatedRef = useRef(false);
 
+  // 📌 Reset centralizado → limpia ID y todos los campos
+  const resetEquipoId = () => {
+    const emptyEquipo = {
+      _id: null,
+      nroSerie: '',
+      tipo: '',
+      marca: '',
+      modelo: '',
+      sku: '',
+      macAddress: '',
+      imei: '',
+      estado: '',
+    };
+    handleChangeOrden('equipo', emptyEquipo);
+  };
+
   // cache desde API
   useEffect(() => {
     if (equipos.length > 0) setCacheEquipos(equipos);
@@ -42,7 +58,9 @@ export function StepEquipo() {
       setShowDropdown(equipos.length > 0);
     } else if (term.length > 0) {
       const combined = [...cacheEquipos, ...recentEquipos];
-      const filtered = combined.filter((e) => e.nroSerie.startsWith(term));
+      const filtered = combined.filter((e) =>
+        e.nroSerie.startsWith(term.toUpperCase())
+      );
       setSuggestions(filtered);
       setShowDropdown(filtered.length > 0);
     } else {
@@ -52,22 +70,17 @@ export function StepEquipo() {
     setActiveIndex(-1);
   }, [nroSerieBusqueda, equipos, cacheEquipos, recentEquipos, manualClose]);
 
-  // 🔹 si el nroSerie cambia y no coincide con el equipo seleccionado → limpiar _id
-  useEffect(() => {
-    if (
-      nroSerieBusqueda &&
-      equipo.nroSerie &&
-      nroSerieBusqueda.toUpperCase() !== equipo.nroSerie.toUpperCase()
-    ) {
-      // si escribo algo distinto → liberar campos
-      handleChangeOrden('equipo', { ...equipo, _id: null });
-    }
-  }, [nroSerieBusqueda]);
-
+  // 🔹 Cambio en Nro. Serie → limpiar equipo si ya había uno seleccionado
   const handleNroSerieChange = (e) => {
     const nuevo = e.target.value.toUpperCase();
     setNroSerieBusqueda(nuevo);
-    handleChangeOrden('equipo', { ...equipo, nroSerie: nuevo, _id: null });
+
+    if (equipo._id) {
+      resetEquipoId();
+    } else {
+      handleChangeOrden('equipo', { ...equipo, nroSerie: nuevo });
+    }
+
     setManualClose(false);
   };
 
@@ -84,20 +97,19 @@ export function StepEquipo() {
   const handleSelectEquipo = async (eq) => {
     // 1️⃣ Lookup por ID para traer todos los campos reales
     const fullEquipo = await fetchEquipoById(eq._id);
-
     const finalEquipo = fullEquipo || eq;
 
     // 2️⃣ Actualizar orden con los datos completos
     handleChangeOrden('equipo', {
       _id: finalEquipo._id,
-      nroSerie: finalEquipo.nroSerie,
-      tipo: finalEquipo.tipo,
-      marca: finalEquipo.marca,
-      modelo: finalEquipo.modelo,
-      sku: finalEquipo.sku,
-      macAddress: finalEquipo.macAddress,
-      imei: finalEquipo.imei,
-      estado: finalEquipo.estado,
+      nroSerie: finalEquipo.nroSerie || '',
+      tipo: finalEquipo.tipo || '',
+      marca: finalEquipo.marca || '',
+      modelo: finalEquipo.modelo || '',
+      sku: finalEquipo.sku || '',
+      macAddress: finalEquipo.macAddress || '',
+      imei: finalEquipo.imei || '',
+      estado: finalEquipo.estado || '',
     });
 
     // 3️⃣ Guardar en recientes y UI
@@ -161,7 +173,7 @@ export function StepEquipo() {
           <span className="right-span">{eq.modelo}</span>
         </div>
       ),
-      disabled: false, // 🔹 este siempre habilitado
+      disabled: false,
     },
     {
       name: 'tipo',

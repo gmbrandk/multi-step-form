@@ -54,6 +54,7 @@ export function StepOrdenServicio() {
           options: [
             { value: '68afd6a2c19b8c72a13decb0', label: 'Mantenimiento' },
             { value: '68afd6a2c19b8c72a13decb1', label: 'Reparación' },
+            { value: '68afd6a2c19b8c72a13decb2', label: 'Repuesto' },
           ],
         },
         {
