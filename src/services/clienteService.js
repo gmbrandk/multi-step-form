@@ -1,4 +1,4 @@
-// @services/clienteService.js
+// services/clienteService.js
 let _provider = null;
 let _proveedorNombre = 'no definido';
 let _proveedorTipo = 'desconocido';
@@ -25,8 +25,13 @@ export const getClienteService = () => {
   if (!_inicializado || !_provider) {
     throw new Error('[clienteService] No ha sido inicializado.');
   }
+
   return {
     crearCliente: (data) => _provider.crearCliente(data),
+
+    // 🔹 Aunque sea pass-through, mantenemos la interfaz consistente
+    buildPayload: (cliente) => ({ ...cliente }),
+
     obtenerNombreProveedor: () => _proveedorNombre,
     obtenerTipoProveedor: () => _proveedorTipo,
   };

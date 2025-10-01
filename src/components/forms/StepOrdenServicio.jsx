@@ -52,9 +52,12 @@ export function StepOrdenServicio() {
           gridColumn: '1 / 4',
           defaultValue: '68afd6a2c19b8c72a13decb0',
           options: [
-            { value: '68afd6a2c19b8c72a13decb0', label: 'Mantenimiento' },
-            { value: '68afd6a2c19b8c72a13decb1', label: 'Reparación' },
-            { value: '68afd6a2c19b8c72a13decb2', label: 'Repuesto' },
+            {
+              value: '68a74570f2ab41918da7f937',
+              label: 'Mantenimiento Preventivo',
+            },
+            { value: '68afd6a2c19b8c72a13decb0', label: 'Diagnostico' },
+            { value: '68dc9ac76162927555649baa', label: 'Formateo' },
           ],
         },
         {
@@ -69,6 +72,14 @@ export function StepOrdenServicio() {
           type: 'textarea',
           label: { name: 'Descripción', className: 'sr-only' },
           placeholder: 'Ej: Limpieza interna y chequeo de hardware',
+          gridColumn: '1 / 4',
+        },
+
+        {
+          name: 'observaciones', // ✅ faltaba
+          type: 'textarea',
+          label: { name: 'Observaciones', className: 'sr-only' },
+          placeholder: 'Ej: Equipo con carcasa rallada',
           gridColumn: '1 / 4',
         },
         {

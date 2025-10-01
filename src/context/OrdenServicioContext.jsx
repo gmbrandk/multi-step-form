@@ -1,4 +1,3 @@
-// src/context/OrdenServicioContext.jsx
 import {
   createContext,
   useCallback,
@@ -6,8 +5,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { getClienteService } from '../services/clienteService';
-import { getEquipoService } from '../services/equipoService';
 
 // 👇 Importa tu hook del wizard
 import { useOrdenServicioWizard } from '../hooks/useOrdenServicioWizard';
@@ -19,6 +16,7 @@ export function OrdenServicioProvider({
   defaults = {},
   initialValues = {},
 }) {
+  // 📌 Estado del formulario
   const [orden, setOrden] = useState(() => ({
     ...defaults,
     ...initialValues,
@@ -32,48 +30,11 @@ export function OrdenServicioProvider({
           ],
   }));
 
-  // 👇 Instancia el wizard aquí una sola vez
+  // 📌 Wizard maneja ids + submit de pasos/final
   const { ids, handleStepSubmit, handleFinalSubmit, resetClienteId } =
     useOrdenServicioWizard();
 
-  // 🔹 Crear cliente en backend o mock
-  const crearCliente = useCallback(async (datosCliente) => {
-    const service = getClienteService();
-    const res = await service.crearCliente(datosCliente);
-
-    if (res.success) {
-      console.log('[crearCliente] backend devuelve:', res.details.cliente);
-      setOrden((prev) => ({
-        ...prev,
-        cliente: {
-          ...prev.cliente, // preserva posibles campos locales
-          ...res.details.cliente, // sobrescribe con el cliente real del backend (incluye _id)
-        },
-      }));
-    }
-
-    return res;
-  }, []);
-
-  // 🔹 Crear equipo
-  const crearEquipo = useCallback(async (datosEquipo) => {
-    const service = getEquipoService();
-    const res = await service.crearEquipo(datosEquipo);
-
-    if (res.success) {
-      console.log('[crearEquipo] backend devuelve:', res.details.equipo);
-      setOrden((prev) => ({
-        ...prev,
-        equipo: {
-          ...prev.equipo, // preserva datos temporales del formulario
-          ...res.details.equipo, // sobrescribe con datos del backend (incluido _id)
-        },
-      }));
-    }
-
-    return res;
-  }, []);
-
+  // 📌 Agregar línea de servicio
   const handleAgregarLinea = useCallback(() => {
     setOrden((prev) => ({
       ...prev,
@@ -81,10 +42,12 @@ export function OrdenServicioProvider({
     }));
   }, [defaults]);
 
+  // 📌 Cambiar campo general de la orden
   const handleChangeOrden = useCallback((field, value) => {
     setOrden((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  // 📌 Cambiar campo de línea específica
   const handleChangeLinea = useCallback(
     (idx, field, value) => {
       setOrden((prev) => {
@@ -92,6 +55,7 @@ export function OrdenServicioProvider({
         const current = rawLineas[idx] ?? {};
         const updatedLinea = { ...current, [field]: value };
 
+        // Recalcular subtotal
         if (field === 'cantidad' || field === 'precioUnitario') {
           const cantidad =
             field === 'cantidad'
@@ -110,6 +74,7 @@ export function OrdenServicioProvider({
           ...rawLineas.slice(idx + 1),
         ];
 
+        // Auto-crear nueva línea si corresponde
         if (field === 'crearLinea' && value === true) {
           if (!prev.lineas[idx + 1]) {
             if (typeof defaults.createLineaServicio === 'function') {
@@ -120,6 +85,7 @@ export function OrdenServicioProvider({
           }
         }
 
+        // Calcular total de la orden
         const total = newLineas.reduce(
           (acc, l) => acc + (Number(l.subTotal) || 0),
           0
@@ -136,16 +102,15 @@ export function OrdenServicioProvider({
     [defaults]
   );
 
+  // 📌 Valor expuesto en el contexto
   const value = useMemo(
     () => ({
       orden,
       setOrden,
-      crearCliente,
-      crearEquipo,
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
-      // 👇 Exporta wizard state + handlers al contexto
+      // 👇 Wizard state + handlers
       ids,
       handleStepSubmit,
       handleFinalSubmit,
@@ -153,8 +118,6 @@ export function OrdenServicioProvider({
     }),
     [
       orden,
-      crearCliente,
-      crearEquipo,
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
