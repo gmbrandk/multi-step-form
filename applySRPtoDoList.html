@@ -1,0 +1,298 @@
+<div
+  class="markdown prose dark:prose-invert w-full break-words dark markdown-new-styling"
+>
+  <p data-start="0" data-end="233">
+    ¡Muy buena observación! 🔥 Tu
+    <code data-start="30" data-end="46">useClienteForm</code> está creciendo
+    demasiado, mezcla
+    <strong data-start="80" data-end="172"
+      >lógica de búsqueda DNI, generación de emails, navegación de inputs,
+      cachés, persistencia</strong
+    >… y eso rompe el
+    <strong data-start="189" data-end="230"
+      >Single Responsibility Principle (SRP)</strong
+    >.
+  </p>
+  <p data-start="235" data-end="365">
+    Te dejo un
+    <strong data-start="246" data-end="277">ToDoList de refactorización</strong
+    >, orientado a que el hook sea modular y reusable en otros flujos (como el
+    de equipos):
+  </p>
+  <hr data-start="367" data-end="370" />
+  <h2 data-start="372" data-end="422">
+    ✅ ToDoList para aplicar SRP en
+    <code data-start="406" data-end="422">useClienteForm</code>
+  </h2>
+  <h3 data-start="424" data-end="463">
+    1.
+    <strong data-start="431" data-end="463"
+      >Separar hooks especializados</strong
+    >
+  </h3>
+  <ul data-start="464" data-end="1415" class="contains-task-list">
+    <li data-start="464" data-end="805" class="task-list-item">
+      <p data-start="466" data-end="543">
+        <input disabled="" type="checkbox" />
+        <strong data-start="470" data-end="494"
+          ><code data-start="472" data-end="492"
+            >useDniAutocomplete</code
+          ></strong
+        ><br data-start="494" data-end="497" />
+        Encargado de toda la lógica del campo DNI:
+      </p>
+      <ul data-start="546" data-end="805">
+        <li data-start="546" data-end="604">
+          <p data-start="548" data-end="604">
+            Manejo de <code data-start="558" data-end="571">dniBusqueda</code>,
+            <code data-start="573" data-end="586">suggestions</code>,
+            <code data-start="588" data-end="601">activeIndex</code>.
+          </p>
+        </li>
+        <li data-start="607" data-end="637">
+          <p data-start="609" data-end="637">Fetch y cache de clientes.</p>
+        </li>
+        <li data-start="640" data-end="694">
+          <p data-start="642" data-end="694">
+            Persistencia de
+            <code data-start="658" data-end="673">recentClients</code> en
+            <code data-start="677" data-end="691">localStorage</code>.
+          </p>
+        </li>
+        <li data-start="697" data-end="805">
+          <p data-start="699" data-end="805">
+            Handlers:
+            <code data-start="709" data-end="726">handleDniChange</code>,
+            <code data-start="728" data-end="744">handleDniFocus</code>,
+            <code data-start="746" data-end="761">handleDniBlur</code>,
+            <code data-start="763" data-end="781">handleKeyDownDni</code>,
+            <code data-start="783" data-end="804">handleSelectCliente</code>.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="807" data-end="1126" class="task-list-item">
+      <p data-start="809" data-end="882">
+        <input disabled="" type="checkbox" />
+        <strong data-start="813" data-end="838"
+          ><code data-start="815" data-end="836"
+            >useEmailSuggestions</code
+          ></strong
+        ><br data-start="838" data-end="841" />
+        Encargado de la generación de emails:
+      </p>
+      <ul data-start="885" data-end="1126">
+        <li data-start="885" data-end="973">
+          <p data-start="887" data-end="973">
+            Estado:
+            <code data-start="895" data-end="913">emailSuggestions</code>,
+            <code data-start="915" data-end="933">activeEmailIndex</code>,
+            <code data-start="935" data-end="954">showEmailDropdown</code>,
+            <code data-start="956" data-end="970">emailFetched</code>.
+          </p>
+        </li>
+        <li data-start="976" data-end="1007">
+          <p data-start="978" data-end="1007">Lógica de fetch al backend.</p>
+        </li>
+        <li data-start="1010" data-end="1126">
+          <p data-start="1012" data-end="1126">
+            Handlers:
+            <code data-start="1022" data-end="1040">handleEmailFocus</code>,
+            <code data-start="1042" data-end="1059">handleEmailBlur</code>,
+            <code data-start="1061" data-end="1081">handleKeyDownEmail</code>,
+            <code data-start="1083" data-end="1102">handleEmailSelect</code>,
+            <code data-start="1104" data-end="1125">toggleEmailDropdown</code>.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li class="task-list-item" data-start="1128" data-end="1415">
+      <p data-start="1130" data-end="1207">
+        <input disabled="" type="checkbox" />
+        <strong data-start="1134" data-end="1157"
+          ><code data-start="1136" data-end="1155"
+            >useFormNavigation</code
+          ></strong
+        ><br data-start="1157" data-end="1160" />
+        Maneja el
+        <strong data-start="1172" data-end="1204"
+          >salto entre campos con Enter</strong
+        >:
+      </p>
+      <ul data-start="1210" data-end="1415">
+        <li data-start="1210" data-end="1258">
+          <p data-start="1212" data-end="1258">
+            Guarda referencias de inputs en
+            <code data-start="1244" data-end="1255">fieldRefs</code>.
+          </p>
+        </li>
+        <li data-start="1261" data-end="1286">
+          <p data-start="1263" data-end="1286">
+            Calcula <code data-start="1271" data-end="1283">fieldOrder</code>.
+          </p>
+        </li>
+        <li data-start="1289" data-end="1359">
+          <p data-start="1291" data-end="1359">
+            Expone
+            <code data-start="1298" data-end="1314">focusNextField</code> y un
+            handler genérico (<code data-start="1338" data-end="1355"
+              >genericHandlers</code
+            >).
+          </p>
+        </li>
+        <li data-start="1362" data-end="1415">
+          <p data-start="1364" data-end="1415">
+            Esto te sirve tanto en
+            <code data-start="1387" data-end="1396">cliente</code> como en
+            <code data-start="1405" data-end="1414">equipos</code>.
+          </p>
+        </li>
+      </ul>
+    </li>
+  </ul>
+  <hr data-start="1417" data-end="1420" />
+  <h3 data-start="1422" data-end="1461">
+    2.
+    <strong data-start="1429" data-end="1461"
+      >Componer en
+      <code data-start="1443" data-end="1459">useClienteForm</code></strong
+    >
+  </h3>
+  <ul class="contains-task-list" data-start="1462" data-end="1739">
+    <li class="task-list-item" data-start="1462" data-end="1527">
+      <p data-start="1468" data-end="1527">
+        <input disabled="" type="checkbox" /> Usar los hooks especializados
+        dentro de <code data-start="1508" data-end="1524">useClienteForm</code>.
+      </p>
+    </li>
+    <li class="task-list-item" data-start="1528" data-end="1739">
+      <p data-start="1530" data-end="1584">
+        <input disabled="" type="checkbox" />
+        <code data-start="1534" data-end="1550">useClienteForm</code> debería
+        encargarse <strong data-start="1570" data-end="1578">solo</strong> de:
+      </p>
+      <ul data-start="1587" data-end="1739">
+        <li data-start="1587" data-end="1652">
+          <p data-start="1589" data-end="1652">
+            Orquestar estados de cliente (<code
+              data-start="1619"
+              data-end="1627"
+              >locked</code
+            >,
+            <code data-start="1629" data-end="1648">handleChangeOrden</code>).
+          </p>
+        </li>
+        <li data-start="1655" data-end="1684">
+          <p data-start="1657" data-end="1684">
+            Integrar <code data-start="1666" data-end="1671">dni</code> y
+            <code data-start="1674" data-end="1681">email</code>.
+          </p>
+        </li>
+        <li data-start="1687" data-end="1739">
+          <p data-start="1689" data-end="1739">
+            Retornar <code data-start="1698" data-end="1709">fieldRefs</code>,
+            <code data-start="1711" data-end="1721">handlers</code> y
+            <code data-start="1724" data-end="1736">fieldOrder</code>.
+          </p>
+        </li>
+      </ul>
+    </li>
+  </ul>
+  <hr data-start="1741" data-end="1744" />
+  <h3 data-start="1746" data-end="1775">
+    3. <strong data-start="1753" data-end="1775">Normalizar outputs</strong>
+  </h3>
+  <ul class="contains-task-list" data-start="1776" data-end="1929">
+    <li class="task-list-item" data-start="1776" data-end="1833">
+      <p data-start="1782" data-end="1833">
+        <input disabled="" type="checkbox" /> Cada hook expone un objeto
+        <code data-start="1809" data-end="1830">{ state, handlers }</code>.
+      </p>
+    </li>
+    <li class="task-list-item" data-start="1834" data-end="1929">
+      <p data-start="1836" data-end="1929">
+        <input disabled="" type="checkbox" />
+        <code data-start="1840" data-end="1856">useClienteForm</code> une esos
+        outputs en un único objeto, que
+        <code data-start="1898" data-end="1918">buildClienteFields</code>
+        consume.
+      </p>
+    </li>
+  </ul>
+  <hr data-start="1931" data-end="1934" />
+  <h3 data-start="1936" data-end="1980">
+    4.
+    <strong data-start="1943" data-end="1980"
+      >Generalizar para reuso en Equipos</strong
+    >
+  </h3>
+  <ul data-start="1981" data-end="2172" class="contains-task-list">
+    <li data-start="1981" data-end="2077" class="task-list-item">
+      <p data-start="1987" data-end="2077">
+        <input disabled="" type="checkbox" /> En
+        <code data-start="1990" data-end="2009">useFormNavigation</code>, no
+        dependas de nombres fijos (<code data-start="2041" data-end="2046"
+          >dni</code
+        >, <code data-start="2048" data-end="2055">email</code>), usa
+        <code data-start="2062" data-end="2074">fieldOrder</code>.
+      </p>
+    </li>
+    <li class="task-list-item" data-start="2078" data-end="2172">
+      <p data-start="2084" data-end="2172">
+        <input disabled="" type="checkbox" /> Así el mismo hook se usa en
+        <strong data-start="2112" data-end="2123">equipos</strong>,
+        <strong data-start="2125" data-end="2137">clientes</strong> o cualquier
+        formulario dinámico.
+      </p>
+    </li>
+  </ul>
+  <hr data-start="2174" data-end="2177" />
+  <h3 data-start="2179" data-end="2204">
+    5. <strong data-start="2186" data-end="2204">Extra sugerida</strong>
+  </h3>
+  <ul data-start="2205" data-end="2358" class="contains-task-list">
+    <li data-start="2205" data-end="2358" class="task-list-item">
+      <p data-start="2211" data-end="2358">
+        <input disabled="" type="checkbox" /> Extraer
+        <code data-start="2219" data-end="2234">recentClients</code> a un hook
+        separado:
+        <strong data-start="2255" data-end="2289"
+          ><code data-start="2257" data-end="2287"
+            >useRecentStorage(key, limit)</code
+          ></strong
+        >, genérico para almacenar histórico de selección en
+        <code data-start="2341" data-end="2355">localStorage</code>.
+      </p>
+    </li>
+  </ul>
+  <hr data-start="2360" data-end="2363" />
+  <p data-start="2365" data-end="2584">
+    📌 Con esta división, tu
+    <code data-start="2390" data-end="2406">useClienteForm</code> quedaría de
+    ~50-70 líneas, en lugar de 300.<br data-start="2450" data-end="2453" />
+    Cada hook tendría su
+    <strong data-start="2474" data-end="2493">propósito único</strong> y podrías
+    reusar
+    <code data-start="2511" data-end="2532">useEmailSuggestions</code>
+    directamente en <strong data-start="2549" data-end="2560">equipos</strong>,
+    sin duplicar lógica.
+  </p>
+  <hr data-start="2586" data-end="2589" />
+  <p
+    data-start="2591"
+    data-end="2789"
+    data-is-last-node=""
+    data-is-only-node=""
+  >
+    👉 ¿Quieres que te arme un
+    <strong data-start="2618" data-end="2656"
+      >esqueleto inicial de estos 3 hooks</strong
+    >
+    (<code data-start="2658" data-end="2678">useDniAutocomplete</code>,
+    <code data-start="2680" data-end="2701">useEmailSuggestions</code>,
+    <code data-start="2703" data-end="2722">useFormNavigation</code>) ya con
+    <code data-start="2731" data-end="2741">handlers</code> listos para
+    enchufarlos en tu
+    <code data-start="2772" data-end="2788">useClienteForm</code>?
+  </p>
+</div>
