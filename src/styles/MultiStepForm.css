@@ -215,3 +215,30 @@ body {
   color: #5f6368;
   font-size: 13px;
 }
+
+/* Botón de flecha */
+.msform .autocomplete-input-wrapper {
+  position: relative;
+}
+
+.msform .autocomplete-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.msform .autocomplete-toggle img {
+  width: 14px;
+  height: 14px;
+  pointer-events: none; /* no bloquea clicks */
+}
+
+.msform .autocomplete-toggle.open {
+  transform: translateY(-50%) rotate(180deg);
+}

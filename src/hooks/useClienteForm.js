@@ -1,4 +1,3 @@
-// hooks/useClienteForm.js
 import { useEffect, useRef, useState } from 'react';
 
 export function useClienteForm({
@@ -7,7 +6,7 @@ export function useClienteForm({
   fetchClienteById,
   resetClienteId,
   clientes,
-  fieldOrder = [], // 👈 ahora viene del schema
+  fieldOrder = [],
 }) {
   const [dniBusqueda, setDniBusqueda] = useState(clienteInicial?.dni || '');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -19,8 +18,15 @@ export function useClienteForm({
   const [isFirstFocus, setIsFirstFocus] = useState(true);
   const [locked, setLocked] = useState(Boolean(clienteInicial?._id));
 
+  // 🔹 NUEVO estado para email
+  const [emailSuggestions, setEmailSuggestions] = useState([]);
+  const [showEmailDropdown, setShowEmailDropdown] = useState(false);
+  const [activeEmailIndex, setActiveEmailIndex] = useState(-1);
+  const [emailFetched, setEmailFetched] = useState(false); // 👈 evitar múltiples fetch
+
   const userInitiatedRef = useRef(false);
   const fieldRefs = useRef({});
+  const baseUrl = import.meta.env.VITE_API_URL;
 
   // ✅ mover foco al siguiente campo usando fieldOrder dinámico
   const focusNextField = (currentName) => {
@@ -51,10 +57,9 @@ export function useClienteForm({
     }
   }, []);
 
-  // 🔹 Lógica del dropdown
+  // 🔹 Lógica del dropdown para DNI (igual que antes)
   useEffect(() => {
     if (manualClose) return;
-
     const term = dniBusqueda?.trim();
 
     if (!term || term.length === 0) {
@@ -84,7 +89,7 @@ export function useClienteForm({
     setActiveIndex(-1);
   }, [dniBusqueda, clientes, recentClients, cacheClientes, manualClose]);
 
-  // ✅ handler DNI (resetea todos los campos si cambia)
+  // ✅ handler DNI
   const handleDniChange = (e) => {
     let nuevoDni = e.target.value.replace(/\D/g, '');
     if (nuevoDni.length > 8) nuevoDni = nuevoDni.slice(0, 8);
@@ -145,7 +150,6 @@ export function useClienteForm({
     localStorage.setItem('recentClients', JSON.stringify(updated));
   };
 
-  // ✅ lookup + cerrar dropdown
   const handleSelectCliente = async (c) => {
     try {
       const fullCliente = await fetchClienteById(c._id);
@@ -172,12 +176,11 @@ export function useClienteForm({
     }
   };
 
-  // ✅ manejo de teclado (incluye salto a siguiente campo)
   const handleKeyDownDni = (e) => {
     if (!showDropdown || suggestions.length === 0) {
       if (e.key === 'Enter' && dniBusqueda.length === 8) {
         e.preventDefault();
-        focusNextField('dni'); // 👈 ahora funciona con fieldOrder dinámico
+        focusNextField('dni');
       }
       return;
     }
@@ -201,6 +204,99 @@ export function useClienteForm({
     }
   };
 
+  const MANUAL_OPTION = '__manual__';
+
+  // 🔹 función común de fetch
+  const fetchEmailSuggestions = async () => {
+    if (emailFetched || !clienteInicial?.nombres || !clienteInicial?.apellidos)
+      return;
+    try {
+      const res = await fetch(`${baseUrl}/api/clientes/generar-emails`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombres: clienteInicial.nombres,
+          apellidos: clienteInicial.apellidos,
+        }),
+      });
+      const data = await res.json();
+      setEmailSuggestions([...(data.details || []), MANUAL_OPTION]);
+      setEmailFetched(true);
+    } catch (err) {
+      console.error('[fetchEmailSuggestions] error fetching emails:', err);
+      setEmailSuggestions([]);
+    }
+  };
+
+  const handleEmailFocus = async () => {
+    await fetchEmailSuggestions();
+    setShowEmailDropdown(true);
+    setActiveEmailIndex(-1);
+  };
+
+  const toggleEmailDropdown = async () => {
+    await fetchEmailSuggestions();
+    setShowEmailDropdown((prev) => !prev);
+  };
+
+  const handleEmailSelect = (value) => {
+    if (value === MANUAL_OPTION) {
+      handleChangeOrden('cliente', { ...clienteInicial, email: '' });
+    } else {
+      handleChangeOrden('cliente', { ...clienteInicial, email: value });
+    }
+    setShowEmailDropdown(false);
+  };
+
+  const handleEmailBlur = () => {
+    setTimeout(() => setShowEmailDropdown(false), 150);
+  };
+
+  const handleKeyDownEmail = (e) => {
+    if (!showEmailDropdown || emailSuggestions.length === 0) {
+      // Si no hay dropdown, permitir salto manual con Enter
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        focusNextField('email'); // 👈 avanza al siguiente campo
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveEmailIndex((prev) => (prev + 1) % emailSuggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveEmailIndex((prev) =>
+        prev <= 0 ? emailSuggestions.length - 1 : prev - 1
+      );
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeEmailIndex >= 0) {
+        handleEmailSelect(emailSuggestions[activeEmailIndex]);
+        focusNextField('email'); // 👈 después de elegir, pasamos al siguiente
+      }
+    } else if (e.key === 'Escape') {
+      setShowEmailDropdown(false);
+      setActiveEmailIndex(-1);
+    }
+  };
+
+  const handleGenericKeyDown = (fieldName) => (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      focusNextField(fieldName);
+    }
+  };
+
+  // ⚡ Genera un proxy dinámico de handlers genéricos
+  const genericHandlers = new Proxy(
+    {},
+    {
+      get: (_, fieldName) => handleGenericKeyDown(fieldName),
+    }
+  );
+
   return {
     dniBusqueda,
     showDropdown,
@@ -209,12 +305,27 @@ export function useClienteForm({
     locked,
     fieldRefs,
     handlers: {
+      //regular input
+      generic: genericHandlers ?? {}, // 👈 fallback vacío por si acaso
+      // dni...
       handleDniChange,
       handleSelectCliente,
       handleKeyDownDni,
       handleDniPointerDown,
       handleDniFocus,
       handleDniBlur,
+
+      // email...
+      handleEmailFocus,
+      handleEmailSelect,
+      handleKeyDownEmail,
+      handleEmailBlur,
+      toggleEmailDropdown, // 👈 agregado
+    },
+    emailState: {
+      emailSuggestions,
+      showEmailDropdown,
+      activeEmailIndex,
     },
   };
 }

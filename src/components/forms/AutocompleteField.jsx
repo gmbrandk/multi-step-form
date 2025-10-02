@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-// AutocompleteField.jsx
 export function AutocompleteField({
   id,
   label,
@@ -20,7 +19,8 @@ export function AutocompleteField({
   inputMode,
   maxLength,
   renderSuggestion,
-  inputRef, // 👈 añadido
+  inputRef,
+  withToggle = false, // 👈 NUEVO PROP
 }) {
   const [internalFocus, setInternalFocus] = useState(false);
 
@@ -38,52 +38,68 @@ export function AutocompleteField({
         {label?.name || label}
       </label>
 
-      <input
-        id={id}
-        name={id}
-        type="text"
-        placeholder={placeholder}
-        value={value}
-        disabled={disabled}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        onPointerDown={onPointerDown}
-        onFocus={(e) => {
-          setInternalFocus(true);
-          onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setTimeout(() => setInternalFocus(false), 150);
-          onBlur?.(e);
-        }}
-        autoComplete="off"
-        inputMode={inputMode}
-        maxLength={maxLength}
-        aria-autocomplete="list"
-        aria-controls={`${id}-listbox`}
-        aria-expanded={showDropdown}
-        className="autocomplete-input"
-        ref={inputRef} // 👈 ahora sí se conecta con fieldRefs
-      />
+      <div className="autocomplete-input-wrapper">
+        <input
+          id={id}
+          name={id}
+          type="text"
+          placeholder={placeholder}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          onPointerDown={onPointerDown}
+          onFocus={(e) => {
+            setInternalFocus(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setTimeout(() => setInternalFocus(false), 150);
+            onBlur?.(e);
+          }}
+          autoComplete="off"
+          inputMode={inputMode}
+          maxLength={maxLength}
+          aria-autocomplete="list"
+          aria-controls={`${id}-listbox`}
+          aria-expanded={showDropdown}
+          className="autocomplete-input"
+          ref={inputRef}
+        />
 
-      {showDropdown && suggestions.length > 0 && internalFocus && (
+        {/* 🔽 Botón con la flecha */}
+        {withToggle && (
+          <button
+            type="button"
+            className={`autocomplete-toggle ${showDropdown ? 'open' : ''}`}
+            onMouseDown={(e) => {
+              e.preventDefault(); // evita blur del input
+              if (showDropdown) {
+                onBlur?.(e); // cerrar
+              } else {
+                onFocus?.(e); // abrir
+              }
+            }}
+          >
+            <img src="/dropdown-arrow.svg" alt="abrir opciones" />
+          </button>
+        )}
+      </div>
+
+      {showDropdown && uniqueSuggestions.length > 0 && internalFocus && (
         <ul id={`${id}-listbox`} role="listbox" className="autocomplete-list">
           {uniqueSuggestions.map((s, index) => {
-            const itemClass = `
-              autocomplete-item
-              ${activeIndex === index ? 'active' : ''}
-              ${s._source === 'recent' ? 'recent' : 'from-api'}
-            `;
+            const isActive = activeIndex === index;
             return (
               <li
                 key={s._id || `${id}-${index}`}
                 role="option"
-                aria-selected={activeIndex === index}
+                aria-selected={isActive}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   onSelect?.(s);
                 }}
-                className={itemClass}
+                className={`autocomplete-item ${isActive ? 'active' : ''}`}
               >
                 {renderSuggestion ? (
                   renderSuggestion(s)

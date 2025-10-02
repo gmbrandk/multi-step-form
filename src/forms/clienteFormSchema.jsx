@@ -1,4 +1,3 @@
-// forms/clienteFormSchema.js
 export const buildClienteFields = ({
   cliente,
   locked,
@@ -8,6 +7,9 @@ export const buildClienteFields = ({
   dniBusqueda,
   handlers,
   fieldRefs,
+
+  // 👇 añadimos emailState que devuelve el hook
+  emailState = {},
 }) => {
   const fields = [
     {
@@ -45,6 +47,7 @@ export const buildClienteFields = ({
       placeholder: 'Ej: Adriana Josefina',
       gridColumn: '1 / 4',
       disabled: locked,
+      onKeyDown: handlers.generic?.nombres, // 👈 ahora limpio
       inputRef: (el) => (fieldRefs.current['nombres'] = el),
     },
     {
@@ -53,6 +56,7 @@ export const buildClienteFields = ({
       placeholder: 'Ej: Tudela Gutiérrez',
       gridColumn: '1 / 4',
       disabled: locked,
+      onKeyDown: handlers.generic?.apellidos, // 👈
       inputRef: (el) => (fieldRefs.current['apellidos'] = el),
     },
     {
@@ -61,15 +65,30 @@ export const buildClienteFields = ({
       placeholder: 'Ej: 913458768',
       gridColumn: '1 / 4',
       disabled: locked,
+      onKeyDown: handlers.generic?.telefono, // 👈
       inputRef: (el) => (fieldRefs.current['telefono'] = el),
     },
     {
       name: 'email',
-      type: 'text',
+      type: 'autocomplete',
+      label: { name: 'Email', className: 'sr-only' },
       placeholder: 'Ej: ejemplo@correo.com',
       gridColumn: '1 / 4',
       disabled: locked,
+      suggestions: emailState.emailSuggestions || [],
+      showDropdown: emailState.showEmailDropdown || false,
+      activeIndex: emailState.activeEmailIndex ?? -1,
+      onFocus: handlers.handleEmailFocus,
+      onBlur: handlers.handleEmailBlur,
+      onKeyDown: handlers.handleKeyDownEmail,
+      onSelect: handlers.handleEmailSelect,
       inputRef: (el) => (fieldRefs.current['email'] = el),
+      withToggle: true, // 👈 SOLO AQUÍ
+      renderSuggestion: (s) => (
+        <div className="autocomplete-item">
+          {s === '__manual__' ? <em>Escribir manualmente</em> : s}
+        </div>
+      ),
     },
     {
       name: 'direccion',
@@ -77,12 +96,13 @@ export const buildClienteFields = ({
       placeholder: 'Ej: Av. Siempre Viva 742',
       gridColumn: '1 / 4',
       disabled: locked,
+      onKeyDown: handlers.generic?.direccion, // 👈
       inputRef: (el) => (fieldRefs.current['direccion'] = el),
     },
   ];
 
   return {
     fields,
-    fieldOrder: fields.map((f) => f.name), // 👈 orden dinámico
+    fieldOrder: fields.map((f) => f.name),
   };
 };

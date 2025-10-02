@@ -34,6 +34,7 @@ export function StepCliente() {
     locked,
     fieldRefs,
     handlers,
+    emailState, // 👈 añadimos emailState aquí
   } = useClienteForm({
     clienteInicial: cliente,
     handleChangeOrden,
@@ -54,6 +55,7 @@ export function StepCliente() {
     dniBusqueda,
     handlers,
     fieldRefs,
+    emailState, // 👈 también lo pasamos aquí
   });
 
   return (

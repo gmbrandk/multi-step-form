@@ -66,6 +66,7 @@ export function SchemaForm({
               inputMode={field.inputMode}
               maxLength={field.maxLength}
               renderSuggestion={field.renderSuggestion}
+              withToggle={field.withToggle} // 👈 añadir esto
               onChange={(e) => {
                 onChange(name, e.target.value);
                 field.onChange?.(e);
