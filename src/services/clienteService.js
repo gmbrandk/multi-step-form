@@ -28,6 +28,7 @@ export const getClienteService = () => {
 
   return {
     crearCliente: (data) => _provider.crearCliente(data),
+    generarEmails: (data) => _provider.generarEmails(data),
 
     // 🔹 Aunque sea pass-through, mantenemos la interfaz consistente
     buildPayload: (cliente) => ({ ...cliente }),

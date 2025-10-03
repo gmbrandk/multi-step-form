@@ -1,4 +1,4 @@
-// components/forms/StepCliente.jsx
+import { useEffect } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { buildClienteFields } from '../../forms/clienteFormSchema';
 import { useBuscarClientes } from '../../hooks/useBuscarClientes';
@@ -8,63 +8,38 @@ import { SchemaForm } from './SchemaForm';
 export function StepCliente() {
   const { orden, handleChangeOrden, resetClienteId } =
     useOrdenServicioContext();
-  const cliente = orden.cliente || {};
 
-  // hook para buscar clientes (API)
+  const cliente = orden.cliente || {};
   const { clientes, fetchClienteById } = useBuscarClientes(cliente?.dni);
 
-  // generamos fields + orden dinámico desde el schema
-  const { fields: clienteFields, fieldOrder } = buildClienteFields({
-    cliente,
-    locked: Boolean(cliente?._id),
-    suggestions: [],
-    showDropdown: false,
-    activeIndex: -1,
-    dniBusqueda: cliente?.dni || '',
-    handlers: {}, // se sobreescriben luego con useClienteForm
-    fieldRefs: { current: {} },
-  });
-
-  // hook especializado en formulario
-  const {
-    dniBusqueda,
-    showDropdown,
-    suggestions,
-    activeIndex,
-    locked,
-    fieldRefs,
-    handlers,
-    emailState, // 👈 añadimos emailState aquí
-  } = useClienteForm({
+  const clienteForm = useClienteForm({
     clienteInicial: cliente,
     handleChangeOrden,
     fetchClienteById,
     resetClienteId,
     clientes,
-    isNew: !cliente?._id,
-    fieldOrder, // 👈 lo pasamos desde el schema
   });
 
-  // reconstruimos fields con los handlers reales del hook
-  const { fields: finalFields } = buildClienteFields({
+  const { fields, fieldOrder } = buildClienteFields({
     cliente,
-    locked,
-    suggestions,
-    showDropdown,
-    activeIndex,
-    dniBusqueda,
-    handlers,
-    fieldRefs,
-    emailState, // 👈 también lo pasamos aquí
+    locked: clienteForm.locked,
+    dni: clienteForm.dni,
+    email: clienteForm.email,
+    navigation: clienteForm.navigation,
   });
+
+  // ✅ sincronización blindada: solo actualiza si realmente cambió
+  useEffect(() => {
+    clienteForm.navigation.setFieldOrder(fieldOrder);
+  }, [fieldOrder, clienteForm.navigation]);
 
   return (
     <SchemaForm
       values={cliente}
-      onChange={(field, value) => {
-        handleChangeOrden('cliente', { ...cliente, [field]: value });
-      }}
-      fields={finalFields}
+      onChange={(field, value) =>
+        handleChangeOrden('cliente', { ...cliente, [field]: value })
+      }
+      fields={fields}
       gridTemplateColumns="repeat(3, 1fr)"
       showDescriptions={false}
     />

@@ -1,0 +1,180 @@
+<div
+  class="markdown prose dark:prose-invert w-full break-words dark markdown-new-styling"
+>
+  <p data-start="0" data-end="127">
+    ¡Sí! 🚀<br data-start="7" data-end="10" />
+    Recapitulando lo que teníamos en el
+    <strong data-start="46" data-end="58">ToDoList</strong> de este módulo de
+    formulario de cliente (y su navegación con Enter):
+  </p>
+  <h3 data-start="129" data-end="146">✅ Ya resuelto</h3>
+  <ul data-start="147" data-end="569" class="contains-task-list">
+    <li data-start="147" data-end="224" class="task-list-item">
+      <p data-start="149" data-end="224">
+        <input disabled="" type="checkbox" checked="" />
+        <strong data-start="153" data-end="168">Bug inicial</strong>:
+        <code data-start="170" data-end="183">dniBusqueda</code> undefined →
+        corregido con <code data-start="210" data-end="221">dni.state</code>.
+      </p>
+    </li>
+    <li data-start="225" data-end="297" class="task-list-item">
+      <p data-start="227" data-end="297">
+        <input disabled="" type="checkbox" checked="" />
+        <strong data-start="231" data-end="247">Enter en DNI</strong> → ahora
+        llama a
+        <code data-start="264" data-end="280">focusNextField</code>
+        correctamente.
+      </p>
+    </li>
+    <li class="task-list-item" data-start="298" data-end="396">
+      <p data-start="300" data-end="396">
+        <input disabled="" type="checkbox" checked="" />
+        <strong data-start="304" data-end="324">fieldOrder vacío</strong> →
+        solucionado sincronizando
+        <code data-start="353" data-end="373">buildClienteFields</code> con
+        <code data-start="378" data-end="393">setFieldOrder</code>.
+      </p>
+    </li>
+    <li data-start="397" data-end="487" class="task-list-item">
+      <p data-start="399" data-end="487">
+        <input disabled="" type="checkbox" checked="" />
+        <strong data-start="403" data-end="436"
+          >Prevención de loops infinitos</strong
+        >
+        → blindaje en
+        <code data-start="451" data-end="484"
+          >useFormNavigation.setFieldOrder</code
+        >.
+      </p>
+    </li>
+    <li data-start="488" data-end="569" class="task-list-item">
+      <p data-start="490" data-end="569">
+        <input disabled="" type="checkbox" checked="" />
+        <strong data-start="494" data-end="526"
+          >Integración en
+          <code data-start="511" data-end="524">StepCliente</code></strong
+        >
+        → ya queda consistente con
+        <code data-start="554" data-end="566">SchemaForm</code>.
+      </p>
+    </li>
+  </ul>
+  <hr data-start="571" data-end="574" />
+  <h3 data-start="576" data-end="613">📌 Pendientes / Mejoras por hacer</h3>
+  <ol data-start="614" data-end="1760">
+    <li data-start="614" data-end="948">
+      <p data-start="617" data-end="646">
+        <strong data-start="617" data-end="644">Homologar Email con DNI</strong>
+      </p>
+      <ul data-start="650" data-end="948">
+        <li data-start="650" data-end="789">
+          <p data-start="652" data-end="789">
+            Ahora mismo
+            <code data-start="664" data-end="671">email</code> también usa
+            <code data-start="684" data-end="700">focusNextField</code>, pero no
+            tiene todavía la misma lógica de "autocompletado + enter salta al
+            siguiente".
+          </p>
+        </li>
+        <li data-start="793" data-end="948">
+          <p data-start="795" data-end="948">
+            Pendiente: revisar si queremos la misma UX que en DNI (ejemplo: si
+            hay sugerencias de email, Enter selecciona; si no, Enter avanza al
+            siguiente campo).
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="950" data-end="1159">
+      <p data-start="953" data-end="1026">
+        <strong data-start="953" data-end="1024"
+          >Generalizar la navegación (nombres, apellidos, teléfono,
+          dirección)</strong
+        >
+      </p>
+      <ul data-start="1030" data-end="1159">
+        <li data-start="1030" data-end="1159">
+          <p data-start="1032" data-end="1159">
+            Ya funciona con
+            <code data-start="1048" data-end="1066">handlers.generic</code> →
+            pero deberíamos probar todos los campos para confirmar que Enter
+            fluye bien entre todos.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="1161" data-end="1328">
+      <p data-start="1164" data-end="1190">
+        <strong data-start="1164" data-end="1188">Validaciones mínimas</strong>
+      </p>
+      <ul data-start="1194" data-end="1328">
+        <li data-start="1194" data-end="1269">
+          <p data-start="1196" data-end="1269">
+            ¿Queremos bloquear
+            <code data-start="1215" data-end="1231">focusNextField</code> si un
+            campo está vacío/mal escrito?
+          </p>
+        </li>
+        <li data-start="1273" data-end="1328">
+          <p data-start="1275" data-end="1328">
+            Ejemplo: no dejar pasar de DNI si no son 8 dígitos.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="1330" data-end="1590">
+      <p data-start="1333" data-end="1380">
+        <strong data-start="1333" data-end="1378"
+          >Blindaje completo de
+          <code data-start="1356" data-end="1376"
+            >buildClienteFields</code
+          ></strong
+        >
+      </p>
+      <ul data-start="1384" data-end="1590">
+        <li data-start="1384" data-end="1590">
+          <p data-start="1386" data-end="1590">
+            Ahora ya sincroniza el orden, pero en algún momento podemos extraer
+            <code data-start="1454" data-end="1474">buildClienteFields</code> a
+            un esquema declarativo externo (tipo JSON o config) para que sea
+            100% determinista y no se rompa con refactors.
+          </p>
+        </li>
+      </ul>
+    </li>
+    <li data-start="1592" data-end="1760">
+      <p data-start="1595" data-end="1608">
+        <strong data-start="1595" data-end="1606">Testing</strong>
+      </p>
+      <ul data-start="1612" data-end="1760">
+        <li data-start="1612" data-end="1710">
+          <p data-start="1614" data-end="1710">
+            Probar Enter/Tab en flujo completo (DNI → nombres → apellidos →
+            teléfono → email → dirección).
+          </p>
+        </li>
+        <li data-start="1714" data-end="1760">
+          <p data-start="1716" data-end="1760">
+            Testear con sugerencias abiertas/cerradas.
+          </p>
+        </li>
+      </ul>
+    </li>
+  </ol>
+  <hr data-start="1762" data-end="1765" />
+  <p data-start="1767" data-end="1873">
+    👉 Diría que lo inmediato es el
+    <strong data-start="1799" data-end="1818">punto 1 (Email)</strong>:
+    equipararlo con el DNI para que la UX sea uniforme.
+  </p>
+  <p
+    data-start="1875"
+    data-end="1984"
+    data-is-last-node=""
+    data-is-only-node=""
+  >
+    ¿Quieres que lo adaptemos ahora mismo para que
+    <code data-start="1922" data-end="1943">useEmailSuggestions</code> soporte
+    Enter exactamente igual que DNI?
+  </p>
+</div>

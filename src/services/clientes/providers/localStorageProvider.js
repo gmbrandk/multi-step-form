@@ -109,6 +109,23 @@ export const localStorageProvider = {
       details: { cliente: nuevoCliente },
     });
   },
+  generarEmails: async ({ nombres, apellidos }) => {
+    // 🔹 Generar emails fake para mock
+    const base = `${nombres}.${apellidos}`.toLowerCase().replace(/\s+/g, '');
+    const sugerencias = [
+      `${base}@gmail.com`,
+      `${base}@hotmail.com`,
+      `${base}@empresa.com`,
+    ];
+
+    return {
+      success: true,
+      status: 200,
+      code: 'EMAILS_GENERADOS',
+      message: 'Sugerencias de email generadas localmente',
+      details: sugerencias,
+    };
+  },
   // 🔹 Nuevo método para limpiar storage
   resetClientes: () => {
     localStorage.removeItem(LOCAL_STORAGE_KEY);

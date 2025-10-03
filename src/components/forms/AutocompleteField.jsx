@@ -24,6 +24,7 @@ export function AutocompleteField({
 }) {
   const [internalFocus, setInternalFocus] = useState(false);
 
+  // ⚡ evita duplicados
   const uniqueSuggestions = suggestions.filter(
     (s, i, arr) =>
       i === arr.findIndex((t) => (t._id ? t._id === s._id : t === s))

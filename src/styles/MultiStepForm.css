@@ -211,6 +211,11 @@ body {
   color: #202124;
 }
 
+.msform .autocomplete-item .email-span {
+  color: #5f6368;
+  font-size: 13px;
+}
+
 .msform .autocomplete-item .right-span {
   color: #5f6368;
   font-size: 13px;
