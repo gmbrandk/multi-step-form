@@ -16,13 +16,15 @@ export function SchemaForm({
     return isEmpty ? field.defaultValue ?? '' : v;
   };
 
-  // ⚡ attachRef ahora usa idx estable
+  // ✅ Nueva función para actualizar valores dentro del form
+  const updateValue = (name, newValue) => {
+    if (typeof onChange === 'function') {
+      onChange(name, newValue);
+    }
+  };
+
   const attachRef = (field, idx) => {
     return (el) => {
-      // console.log(
-      //   `[SchemaForm][attachRef] field="${field.name}" idx=${idx} el=`,
-      //   el
-      // );
       if (typeof field.inputRef === 'function') {
         field.inputRef(el);
       } else if (field.inputRef && 'current' in field.inputRef) {
@@ -41,7 +43,18 @@ export function SchemaForm({
     >
       {fields.map((field, idx) => {
         const { name, type, label, className } = field;
+
+        // 👇 Filtramos si no debe mostrarse
         if (field.visibleWhen && !field.visibleWhen(values)) return null;
+
+        // 👇 Control de reactividad (si depende de otros campos)
+        if (
+          field.dependsOn &&
+          Array.isArray(field.dependsOn) &&
+          !field.dependsOn.some((dep) => dep in values)
+        ) {
+          return null;
+        }
 
         const column =
           typeof field.gridColumn === 'function'
@@ -50,6 +63,7 @@ export function SchemaForm({
 
         const value = resolveValue(field, values);
 
+        // ⚡ AUTOCOMPLETE (con soporte onSelect extendido)
         if (type === 'autocomplete') {
           return (
             <AutocompleteField
@@ -66,7 +80,7 @@ export function SchemaForm({
               inputMode={field.inputMode}
               maxLength={field.maxLength}
               renderSuggestion={field.renderSuggestion}
-              withToggle={field.withToggle} // 👈 añadir esto
+              withToggle={field.withToggle}
               onChange={(e) => {
                 onChange(name, e.target.value);
                 field.onChange?.(e);
@@ -75,12 +89,32 @@ export function SchemaForm({
               onPointerDown={field.onPointerDown}
               onFocus={field.onFocus}
               onBlur={field.onBlur}
-              onSelect={field.onSelect}
-              inputRef={attachRef(field, idx)} // 👈 usamos inputRef aquí
+              onSelect={(item, e) => {
+                // ⚡ Ahora pasa updateValue y values
+                if (field.onSelect) {
+                  field.onSelect(item, e, updateValue, values);
+                }
+              }}
+              inputRef={attachRef(field, idx)}
             />
           );
         }
 
+        // ⚡ CUSTOM FIELD
+        if (type === 'custom') {
+          return (
+            <div key={name} style={{ gridColumn: column }}>
+              {field.render({
+                value,
+                onChange: (v) => onChange(name, v),
+                values,
+                updateValue,
+              })}
+            </div>
+          );
+        }
+
+        // ✅ Checkbox
         if (type === 'checkbox') {
           return (
             <div
@@ -111,6 +145,7 @@ export function SchemaForm({
           );
         }
 
+        // ✅ Select
         if (type === 'select') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -140,6 +175,7 @@ export function SchemaForm({
           );
         }
 
+        // ✅ Textarea
         if (type === 'textarea') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -164,6 +200,7 @@ export function SchemaForm({
           );
         }
 
+        // ✅ Output
         if (type === 'output') {
           return (
             <div key={name} style={{ gridColumn: column }}>
@@ -187,6 +224,7 @@ export function SchemaForm({
           );
         }
 
+        // ✅ Input por defecto
         return (
           <div key={name} style={{ gridColumn: column }}>
             <label htmlFor={name} className={label?.className}>
@@ -200,7 +238,7 @@ export function SchemaForm({
               value={value}
               disabled={readOnly || field.disabled}
               onChange={(e) => onChange(name, e.target.value)}
-              onKeyDown={field.onKeyDown} // 👈 añadir esto
+              onKeyDown={field.onKeyDown}
               style={{ width: '100%' }}
               maxLength={field.maxLength}
               inputMode={field.inputMode}

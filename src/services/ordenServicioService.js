@@ -39,7 +39,6 @@ export const getOrdenServicioService = () => {
         equipoId: ids.equipoId,
         lineasServicio: (orden.lineas || []).map((l) => ({
           tipoTrabajo: l.tipoTrabajo,
-          nombreTrabajo: l.nombreTrabajo,
           descripcion: l.descripcion,
           precioUnitario: l.precioUnitario,
           cantidad: l.cantidad,

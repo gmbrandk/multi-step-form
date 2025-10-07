@@ -36,9 +36,9 @@ export function StepCliente() {
   return (
     <SchemaForm
       values={cliente}
-      onChange={(field, value) =>
-        handleChangeOrden('cliente', { ...cliente, [field]: value })
-      }
+      onChange={(field, value) => {
+        handleChangeOrden('cliente', { [field]: value });
+      }}
       fields={fields}
       gridTemplateColumns="repeat(3, 1fr)"
       showDescriptions={false}

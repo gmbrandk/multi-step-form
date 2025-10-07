@@ -1,3 +1,4 @@
+// OrdenServicioProvider.jsx
 import {
   createContext,
   useCallback,
@@ -5,8 +6,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-
-// 👇 Importa tu hook del wizard
 import { useOrdenServicioWizard } from '../hooks/useOrdenServicioWizard';
 
 const OrdenServicioContext = createContext();
@@ -16,7 +15,6 @@ export function OrdenServicioProvider({
   defaults = {},
   initialValues = {},
 }) {
-  // 📌 Estado del formulario
   const [orden, setOrden] = useState(() => ({
     ...defaults,
     ...initialValues,
@@ -30,11 +28,44 @@ export function OrdenServicioProvider({
           ],
   }));
 
-  // 📌 Wizard maneja ids + submit de pasos/final
   const { ids, handleStepSubmit, handleFinalSubmit, resetClienteId } =
     useOrdenServicioWizard();
 
-  // 📌 Agregar línea de servicio
+  // 📌 Resetear cliente
+  const resetClienteIdMemo = useCallback(() => {
+    resetClienteId?.(); // sigue llamando a lo que te da el wizard
+    setOrden((prev) => ({
+      ...prev,
+      cliente: {
+        _id: null,
+        dni: '',
+        nombres: '',
+        apellidos: '',
+        telefono: '',
+        email: '',
+        direccion: '',
+      },
+    }));
+  }, [resetClienteId]);
+
+  // 📌 Resetear equipo
+  const resetEquipoId = useCallback(() => {
+    setOrden((prev) => ({
+      ...prev,
+      equipo: {
+        _id: null,
+        nroSerie: '',
+        tipo: '',
+        marca: '',
+        modelo: '',
+        sku: '',
+        macAddress: '',
+        imei: '',
+        estado: '',
+      },
+    }));
+  }, []);
+
   const handleAgregarLinea = useCallback(() => {
     setOrden((prev) => ({
       ...prev,
@@ -42,12 +73,16 @@ export function OrdenServicioProvider({
     }));
   }, [defaults]);
 
-  // 📌 Cambiar campo general de la orden
-  const handleChangeOrden = useCallback((field, value) => {
-    setOrden((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const handleChangeOrden = (field, value) => {
+    setOrden((prev) => ({
+      ...prev,
+      [field]: {
+        ...prev[field],
+        ...value,
+      },
+    }));
+  };
 
-  // 📌 Cambiar campo de línea específica
   const handleChangeLinea = useCallback(
     (idx, field, value) => {
       setOrden((prev) => {
@@ -55,7 +90,6 @@ export function OrdenServicioProvider({
         const current = rawLineas[idx] ?? {};
         const updatedLinea = { ...current, [field]: value };
 
-        // Recalcular subtotal
         if (field === 'cantidad' || field === 'precioUnitario') {
           const cantidad =
             field === 'cantidad'
@@ -74,7 +108,6 @@ export function OrdenServicioProvider({
           ...rawLineas.slice(idx + 1),
         ];
 
-        // Auto-crear nueva línea si corresponde
         if (field === 'crearLinea' && value === true) {
           if (!prev.lineas[idx + 1]) {
             if (typeof defaults.createLineaServicio === 'function') {
@@ -85,7 +118,6 @@ export function OrdenServicioProvider({
           }
         }
 
-        // Calcular total de la orden
         const total = newLineas.reduce(
           (acc, l) => acc + (Number(l.subTotal) || 0),
           0
@@ -102,7 +134,6 @@ export function OrdenServicioProvider({
     [defaults]
   );
 
-  // 📌 Valor expuesto en el contexto
   const value = useMemo(
     () => ({
       orden,
@@ -110,11 +141,11 @@ export function OrdenServicioProvider({
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
-      // 👇 Wizard state + handlers
       ids,
       handleStepSubmit,
       handleFinalSubmit,
-      resetClienteId,
+      resetClienteId: resetClienteIdMemo,
+      resetEquipoId, // 👈 ahora sí expuesto
     }),
     [
       orden,
@@ -124,7 +155,8 @@ export function OrdenServicioProvider({
       ids,
       handleStepSubmit,
       handleFinalSubmit,
-      resetClienteId,
+      resetClienteIdMemo,
+      resetEquipoId,
     ]
   );
 

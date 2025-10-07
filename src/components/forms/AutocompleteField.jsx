@@ -6,7 +6,7 @@ export function AutocompleteField({
   placeholder,
   value,
   suggestions = [],
-  showDropdown = false,
+  showDropdown = false, // ← viene del padre (puede ser controlado externamente)
   activeIndex = -1,
   disabled = false,
   gridColumn = '1 / 4',
@@ -20,24 +20,46 @@ export function AutocompleteField({
   maxLength,
   renderSuggestion,
   inputRef,
-  withToggle = false, // 👈 NUEVO PROP
+  withToggle = false, // 👈 si tiene botón desplegable
 }) {
+  // Estado de enfoque interno del input
   const [internalFocus, setInternalFocus] = useState(false);
 
-  // ⚡ evita duplicados
+  // Estado local del toggle manual (flechita)
+  const [manualToggle, setManualToggle] = useState(false);
+
+  // Evita duplicados en las sugerencias
   const uniqueSuggestions = suggestions.filter(
     (s, i, arr) =>
-      i === arr.findIndex((t) => (t._id ? t._id === s._id : t === s))
+      i ===
+      arr.findIndex((t) => {
+        if (typeof s === 'string' && typeof t === 'string') return t === s;
+        return t._id ? t._id === s._id : t.label === s.label;
+      })
   );
+
+  // Si el valor es objeto, muestra una propiedad legible
+  const displayValue =
+    typeof value === 'object' && value !== null
+      ? value.label || value.codigo || ''
+      : value || '';
+
+  // Condición unificada: cuándo mostrar el dropdown
+  const shouldShowDropdown =
+    (showDropdown || manualToggle) &&
+    uniqueSuggestions.length > 0 &&
+    internalFocus;
 
   return (
     <div
       className="autocomplete-wrapper"
       style={{ gridColumn, position: 'relative' }}
     >
-      <label htmlFor={id} className={label?.className}>
-        {label?.name || label}
-      </label>
+      {label && (
+        <label htmlFor={id} className={label?.className}>
+          {label?.name || label}
+        </label>
+      )}
 
       <div className="autocomplete-input-wrapper">
         <input
@@ -45,7 +67,7 @@ export function AutocompleteField({
           name={id}
           type="text"
           placeholder={placeholder}
-          value={value}
+          value={displayValue}
           disabled={disabled}
           onChange={onChange}
           onKeyDown={onKeyDown}
@@ -57,13 +79,15 @@ export function AutocompleteField({
           onBlur={(e) => {
             setTimeout(() => setInternalFocus(false), 150);
             onBlur?.(e);
+            // Cierra el menú si pierde foco y no fue por toggle
+            setManualToggle(false);
           }}
           autoComplete="off"
           inputMode={inputMode}
           maxLength={maxLength}
           aria-autocomplete="list"
           aria-controls={`${id}-listbox`}
-          aria-expanded={showDropdown}
+          aria-expanded={shouldShowDropdown}
           className="autocomplete-input"
           ref={inputRef}
         />
@@ -72,14 +96,13 @@ export function AutocompleteField({
         {withToggle && (
           <button
             type="button"
-            className={`autocomplete-toggle ${showDropdown ? 'open' : ''}`}
+            className={`autocomplete-toggle ${
+              shouldShowDropdown ? 'open' : ''
+            }`}
             onMouseDown={(e) => {
-              e.preventDefault(); // evita blur del input
-              if (showDropdown) {
-                onBlur?.(e); // cerrar
-              } else {
-                onFocus?.(e); // abrir
-              }
+              e.preventDefault(); // evita que el input pierda foco
+              setManualToggle((prev) => !prev); // alterna abierto/cerrado
+              setInternalFocus(true); // mantiene el foco virtual
             }}
           >
             <img src="/dropdown-arrow.svg" alt="abrir opciones" />
@@ -87,7 +110,8 @@ export function AutocompleteField({
         )}
       </div>
 
-      {showDropdown && uniqueSuggestions.length > 0 && internalFocus && (
+      {/* 🔽 Dropdown de sugerencias */}
+      {shouldShowDropdown && (
         <ul id={`${id}-listbox`} role="listbox" className="autocomplete-list">
           {uniqueSuggestions.map((s, index) => {
             const isActive = activeIndex === index;
@@ -99,6 +123,7 @@ export function AutocompleteField({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   onSelect?.(s);
+                  setManualToggle(false); // ✅ cierra el dropdown al seleccionar
                 }}
                 className={`autocomplete-item ${isActive ? 'active' : ''}`}
               >

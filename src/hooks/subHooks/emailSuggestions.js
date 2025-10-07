@@ -14,6 +14,7 @@ export function useEmailSuggestions({
   const MANUAL_OPTION = '__manual__';
   const clienteService = getClienteService();
 
+  // 🚀 Genera los emails según nombres y apellidos
   const fetchEmailSuggestions = async () => {
     if (!clienteInicial?.nombres || !clienteInicial?.apellidos) return;
 
@@ -35,13 +36,12 @@ export function useEmailSuggestions({
     setEmailFetched(true);
   };
 
-  // 🔹 Cuando cambien nombre o apellido → invalidar cache y resetear email
+  // 🧩 Resetear si cambian los nombres/apellidos
   useEffect(() => {
     if (clienteInicial?.nombres && clienteInicial?.apellidos) {
       setEmailFetched(false);
 
-      // 🔹 Si ya había un email asignado → borrarlo
-      if (clienteInicial.email) {
+      if (!clienteInicial._id && clienteInicial.email) {
         handleChangeOrden('cliente', { ...clienteInicial, email: '' });
       }
     } else {
@@ -49,7 +49,7 @@ export function useEmailSuggestions({
     }
   }, [clienteInicial?.nombres, clienteInicial?.apellidos]);
 
-  // 🔹 focus
+  // 🔹 Al enfocar el campo de email
   const handleEmailFocus = async () => {
     if (!emailFetched) {
       await fetchEmailSuggestions();
@@ -60,14 +60,18 @@ export function useEmailSuggestions({
     setActiveEmailIndex(-1);
   };
 
+  // 🔹 Al hacer clic en la flechita del autocomplete
   const toggleEmailDropdown = async () => {
+    // Si no se generaron aún → los obtenemos primero
     if (!emailFetched) {
       await fetchEmailSuggestions();
     }
+
     setShowEmailDropdown((prev) => !prev);
+    setActiveEmailIndex(-1);
   };
 
-  // 🔹 seleccionar email
+  // 🔹 Cuando el usuario selecciona un email
   const handleEmailSelect = (value) => {
     handleChangeOrden('cliente', {
       ...clienteInicial,
@@ -77,11 +81,12 @@ export function useEmailSuggestions({
     setActiveEmailIndex(-1);
   };
 
+  // 🔹 Cuando el campo pierde foco
   const handleEmailBlur = () => {
     setTimeout(() => setShowEmailDropdown(false), 150);
   };
 
-  // 🔹 navegación teclado
+  // 🔹 Manejo de teclado (arriba, abajo, enter, escape)
   const handleKeyDownEmail = (e) => {
     if (!showEmailDropdown || emailSuggestions.length === 0) {
       if (e.key === 'Enter') {
@@ -114,7 +119,7 @@ export function useEmailSuggestions({
     state: { emailSuggestions, showEmailDropdown, activeEmailIndex },
     handlers: {
       handleEmailFocus,
-      toggleEmailDropdown,
+      toggleEmailDropdown, // 👈 el botón ⬇️ del autocomplete usa esto
       handleEmailSelect,
       handleEmailBlur,
       handleKeyDownEmail,

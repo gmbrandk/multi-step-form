@@ -116,24 +116,34 @@ export function generarOrdenMock() {
   const trabajos = [
     {
       categoria: 'servicio',
-      nombreTrabajo: 'Cambio de pantalla',
       descripcion: 'Pantalla rota por golpe',
       cantidad: 1,
       precioUnitario: 250,
     },
     {
       categoria: 'servicio',
-      nombreTrabajo: 'Mantenimiento preventivo',
       descripcion: 'Limpieza interna y cambio de pasta térmica',
       cantidad: 1,
       precioUnitario: 150,
     },
     {
       categoria: 'producto',
-      nombreTrabajo: 'Reemplazo de disco SSD',
       descripcion: 'Disco dañado',
       cantidad: 1,
       precioUnitario: 300,
+    },
+    {
+      categoria: 'servicio',
+      descripcion:
+        'Instalacion de Sistema Operativo Windows y Programas de ofimatica',
+      cantidad: 1,
+      precioUnitario: 40,
+    },
+    {
+      categoria: 'servicio',
+      descripcion: 'Equipo no enciende',
+      cantidad: 1,
+      precioUnitario: 40,
     },
   ];
 

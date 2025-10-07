@@ -1,15 +1,28 @@
-// src/services/clientes/providers/apiProvider.js
 import axios from 'axios';
 const baseURL = 'http://localhost:5000/api';
 
 export const apiProvider = {
   crearCliente: async (clienteData) => {
     try {
-      const res = await axios.post(`${baseURL}/clientes`, clienteData, {
+      // ✅ 1️⃣ Preprocesamiento del teléfono
+      const telefonoFinal =
+        clienteData?.telefono && clienteData?.paisTelefono?.codigo
+          ? `${clienteData.paisTelefono.codigo}${clienteData.telefono}`
+          : clienteData?.telefono || '';
+
+      const payload = {
+        ...clienteData,
+        telefono: telefonoFinal,
+      };
+
+      console.log('📞 [apiProvider] Payload final con prefijo:', payload);
+
+      // ✅ 2️⃣ Envío al backend
+      const res = await axios.post(`${baseURL}/clientes`, payload, {
         withCredentials: true,
       });
 
-      // 🔹 Caso éxito
+      // ✅ 3️⃣ Caso éxito
       return {
         success: true,
         status: res.status,
@@ -20,7 +33,7 @@ export const apiProvider = {
     } catch (error) {
       console.error('[❌ apiProvider] Error en crearCliente:', error);
 
-      // 🔹 Caso error uniforme
+      // ✅ 4️⃣ Manejo de errores uniforme
       const err = error.response?.data || {
         status: 500,
         code: 'UNKNOWN_ERROR',
@@ -37,14 +50,12 @@ export const apiProvider = {
       };
     }
   },
+
   generarEmails: async ({ nombres, apellidos }) => {
     try {
       const res = await axios.post(
         `${baseURL}/clientes/generar-emails`,
-        {
-          nombres,
-          apellidos,
-        },
+        { nombres, apellidos },
         { withCredentials: true }
       );
 
