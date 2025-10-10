@@ -1,3 +1,4 @@
+import { TelefonoField } from '../fields/TelefonoFIeld';
 import { AutocompleteField } from './AutocompleteField';
 
 export function SchemaForm({
@@ -111,6 +112,18 @@ export function SchemaForm({
                 updateValue,
               })}
             </div>
+          );
+        }
+
+        if (type === 'telefono') {
+          return (
+            <TelefonoField
+              key={name}
+              value={value}
+              onChange={(v) => onChange(name, v)}
+              {...field.props} // 👈 todos los demás props agrupados
+              gridColumn={column}
+            />
           );
         }
 

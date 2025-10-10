@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import prefijosTelefonicos from '../prefijosTelefonicos.json';
+import { TelefonoField } from '../components/fields/TelefonoFIeld';
 
 export const buildClienteFields = ({
   cliente,
@@ -76,68 +77,16 @@ export const buildClienteFields = ({
     },
     {
       name: 'telefono',
-      type: 'custom',
+      type: 'telefono',
       gridColumn: '1 / 4',
-      render: ({ value, onChange }) => {
-        const [showDropdown, setShowDropdown] = useState(false);
-        const inputRef = useRef(null);
-
-        const handleTelefonoChange = (e) => {
-          const raw = e.target.value.replace(/\D/g, '');
-          onChange(raw);
-        };
-
-        useEffect(() => {
-          fieldRefs.current['telefono'] = inputRef.current;
-        }, []);
-
-        return (
-          <div className="telefono-wrapper">
-            <div className="telefono-container">
-              <div
-                className="telefono-prefix"
-                onClick={() => setShowDropdown((v) => !v)}
-              >
-                <img
-                  src={paisSeleccionado.bandera}
-                  alt={paisSeleccionado.pais}
-                />
-                <span>{paisSeleccionado.codigo}</span>
-              </div>
-
-              <input
-                type="text"
-                name="telefono"
-                placeholder="Ej: 913458768"
-                value={value || ''}
-                onChange={handleTelefonoChange}
-                onKeyDown={navHandlers.generic.telefono}
-                className="telefono-input"
-                disabled={locked}
-                ref={inputRef}
-              />
-            </div>
-
-            {showDropdown && (
-              <div className="telefono-dropdown">
-                {prefijosTelefonicos.map((p, i) => (
-                  <div
-                    key={`${p.iso}-${i}`}
-                    className="telefono-item"
-                    onClick={() => {
-                      handleSelectPais(p);
-                      setShowDropdown(false);
-                    }}
-                  >
-                    <img src={p.bandera} alt={p.pais} />
-                    <span className="telefono-pais">{p.pais}</span>
-                    <span className="telefono-codigo">{p.codigo}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
+      props: {
+        // 👈 agrupas toda la configuración aquí
+        locked,
+        paisSeleccionado,
+        prefijosTelefonicos,
+        handleSelectPais,
+        navHandlers,
+        fieldRefs,
       },
     },
     {
