@@ -1,4 +1,4 @@
-import { AutocompleteField } from './AutoCompleteField';
+import { AutocompleteField } from './AutocompleteField';
 
 export function SchemaForm({
   values = {},

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import prefijosTelefonicos from '../prefijosTelefonicos.json';
 
 export const buildClienteFields = ({
@@ -15,9 +15,8 @@ export const buildClienteFields = ({
 
   const { state: dniState, handlers: dniHandlers } = dni;
   const { state: emailState, handlers: emailHandlers } = email;
-  const { fieldRefs, handlers: navHandlers } = navigation;
+  const { fieldRefs, handlers: navHandlers } = navigation; // ✅ corregido
 
-  // Estado interno del prefijo actual
   const [paisSeleccionado, setPaisSeleccionado] = useState({
     codigo: '+51',
     bandera: 'https://flagcdn.com/pe.svg',
@@ -25,12 +24,9 @@ export const buildClienteFields = ({
     pais: 'Perú',
   });
 
-  const handleSelectPais = (p) => {
-    setPaisSeleccionado(p);
-  };
+  const handleSelectPais = (p) => setPaisSeleccionado(p);
 
   const fields = [
-    // 🔹 DNI
     {
       name: 'dni',
       type: 'autocomplete',
@@ -60,44 +56,41 @@ export const buildClienteFields = ({
         </div>
       ),
     },
-
-    // 🔹 Nombres
     {
       name: 'nombres',
       type: 'text',
       placeholder: 'Ej: Adriana Josefina',
       gridColumn: '1 / 4',
       disabled: locked,
-      onKeyDown: navHandlers.generic?.nombres,
+      onKeyDown: navHandlers.generic.nombres, // ✅ corregido
       inputRef: (el) => (fieldRefs.current['nombres'] = el),
     },
-
-    // 🔹 Apellidos
     {
       name: 'apellidos',
       type: 'text',
       placeholder: 'Ej: Tudela Gutiérrez',
       gridColumn: '1 / 4',
       disabled: locked,
-      onKeyDown: navHandlers.generic?.apellidos,
+      onKeyDown: navHandlers.generic.apellidos, // ✅ corregido
       inputRef: (el) => (fieldRefs.current['apellidos'] = el),
     },
-
-    // 🔹 Teléfono con prefijo estilo Google
     {
       name: 'telefono',
       type: 'custom',
       gridColumn: '1 / 4',
       render: ({ value, onChange }) => {
         const [showDropdown, setShowDropdown] = useState(false);
-        // 🔹 Cuando cambia el input
+        const inputRef = useRef(null);
+
         const handleTelefonoChange = (e) => {
-          const raw = e.target.value.replace(/\D/g, ''); // Solo números
+          const raw = e.target.value.replace(/\D/g, '');
           onChange(raw);
         };
 
-        // 🔹 Valor completo (visual + prefijo)
-        const telefonoCompleto = `${paisSeleccionado.codigo}${value || ''}`;
+        useEffect(() => {
+          fieldRefs.current['telefono'] = inputRef.current;
+        }, []);
+
         return (
           <div style={{ position: 'relative' }}>
             <div
@@ -117,7 +110,6 @@ export const buildClienteFields = ({
                 fontSize: '13px',
               }}
             >
-              {/* Prefijo + bandera */}
               <div
                 onClick={() => setShowDropdown((v) => !v)}
                 style={{
@@ -142,13 +134,13 @@ export const buildClienteFields = ({
                 </span>
               </div>
 
-              {/* Input editable */}
               <input
                 type="text"
                 name="telefono"
                 placeholder="Ej: 913458768"
                 value={value || ''}
                 onChange={handleTelefonoChange}
+                onKeyDown={navHandlers.generic.telefono} // ✅ corregido
                 style={{
                   flex: 1,
                   justifyContent: 'center',
@@ -160,10 +152,10 @@ export const buildClienteFields = ({
                   fontSize: '13px',
                 }}
                 disabled={locked}
+                ref={inputRef}
               />
             </div>
 
-            {/* Dropdown de países */}
             {showDropdown && (
               <div
                 style={{
@@ -176,14 +168,13 @@ export const buildClienteFields = ({
                   borderRadius: '6px',
                   maxHeight: '200px',
                   overflowY: 'auto',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                   zIndex: 2000,
-                  fontFamily: 'montserrat, arial, sans-serif',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
                 }}
               >
-                {prefijosTelefonicos.map((p, index) => (
+                {prefijosTelefonicos.map((p, i) => (
                   <div
-                    key={`${p.iso}-${p.codigo}-${index}`} // ✅ clave única
+                    key={`${p.iso}-${i}`}
                     onClick={() => {
                       handleSelectPais(p);
                       setShowDropdown(false);
@@ -194,22 +185,7 @@ export const buildClienteFields = ({
                       gap: '8px',
                       padding: '8px 12px',
                       cursor: 'pointer',
-                      background:
-                        paisSeleccionado.iso === p.iso &&
-                        paisSeleccionado.codigo === p.codigo
-                          ? '#e8f0fe'
-                          : 'white',
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = '#f1f3f4')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        paisSeleccionado.iso === p.iso &&
-                        paisSeleccionado.codigo === p.codigo
-                          ? '#e8f0fe'
-                          : 'white')
-                    }
                   >
                     <img
                       src={p.bandera}
@@ -234,8 +210,6 @@ export const buildClienteFields = ({
         );
       },
     },
-
-    // 🔹 Email
     {
       name: 'email',
       type: 'autocomplete',
@@ -250,8 +224,9 @@ export const buildClienteFields = ({
       onBlur: emailHandlers.handleEmailBlur,
       onKeyDown: emailHandlers.handleKeyDownEmail,
       onSelect: emailHandlers.handleEmailSelect,
-      onPointerDown: emailHandlers.toggleEmailDropdown, // 👈 se conecta aquí
+      onPointerDown: emailHandlers.toggleEmailDropdown,
       withToggle: true,
+      inputRef: (el) => (fieldRefs.current['email'] = el),
       renderSuggestion: (s) =>
         s === '__manual__' ? (
           <em className="email-span">Escribir manualmente</em>
@@ -259,14 +234,13 @@ export const buildClienteFields = ({
           <span className="email-span">{s}</span>
         ),
     },
-    // 🔹 Dirección
     {
       name: 'direccion',
       type: 'text',
       placeholder: 'Ej: Av. Siempre Viva 742',
       gridColumn: '1 / 4',
       disabled: locked,
-      onKeyDown: navHandlers.generic?.direccion,
+      onKeyDown: navHandlers.generic.direccion, // ✅ corregido
       inputRef: (el) => (fieldRefs.current['direccion'] = el),
     },
   ];

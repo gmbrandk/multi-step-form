@@ -8,8 +8,8 @@ import { SchemaForm } from './SchemaForm';
 export function StepCliente() {
   const { orden, handleChangeOrden, resetClienteId } =
     useOrdenServicioContext();
-
   const cliente = orden.cliente || {};
+
   const { clientes, fetchClienteById } = useBuscarClientes(cliente?.dni);
 
   const clienteForm = useClienteForm({
@@ -28,17 +28,16 @@ export function StepCliente() {
     navigation: clienteForm.navigation,
   });
 
-  // ✅ sincronización blindada: solo actualiza si realmente cambió
   useEffect(() => {
     clienteForm.navigation.setFieldOrder(fieldOrder);
-  }, [fieldOrder, clienteForm.navigation]);
+  }, [fieldOrder]);
 
   return (
     <SchemaForm
       values={cliente}
-      onChange={(field, value) => {
-        handleChangeOrden('cliente', { [field]: value });
-      }}
+      onChange={(field, value) =>
+        handleChangeOrden('cliente', { [field]: value })
+      }
       fields={fields}
       gridTemplateColumns="repeat(3, 1fr)"
       showDescriptions={false}

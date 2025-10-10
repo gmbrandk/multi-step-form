@@ -1,11 +1,9 @@
+// useClienteForm.js
+import { useState } from 'react';
 import { useEmailSuggestions } from './subHooks/emailSuggestions';
 import { useDniAutocomplete } from './subHooks/useDniAutocomplete';
 import { useFormNavigation } from './subHooks/useFormNavigation';
 
-/**
- * Hook especializado en formulario de Cliente
- * Orquesta sub-hooks sin ensuciarse con lógica de bajo nivel
- */
 export function useClienteForm({
   clienteInicial,
   handleChangeOrden,
@@ -13,8 +11,14 @@ export function useClienteForm({
   resetClienteId,
   clientes,
 }) {
-  // 🚨 no pasamos fieldOrder aquí
-  const navigation = useFormNavigation([]);
+  const [paisSeleccionado, setPaisSeleccionado] = useState(null);
+
+  // ✅ ahora soporta getFieldValue y getContext
+  const navigation = useFormNavigation(
+    [], // initialOrder (se sincroniza luego)
+    (field) => clienteInicial?.[field] || '',
+    () => ({ paisSeleccionado })
+  );
 
   const dni = useDniAutocomplete({
     clienteInicial,
@@ -37,6 +41,8 @@ export function useClienteForm({
     dni,
     email,
     navigation,
+    paisSeleccionado,
+    setPaisSeleccionado,
     locked,
     handleChangeOrden,
   };
