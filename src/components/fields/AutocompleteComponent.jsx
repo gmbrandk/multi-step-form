@@ -1,3 +1,5 @@
+import { div } from 'framer-motion/client';
+
 export function AutocompleteComponent({
   id,
   label,
@@ -50,18 +52,20 @@ export function AutocompleteComponent({
         />
 
         {withToggle && (
-          <button
-            type="button"
-            className={`autocomplete-toggle ${
-              shouldShowDropdown ? 'open' : ''
-            }`}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              onToggle?.();
-            }}
-          >
-            <img src="/dropdown-arrow.svg" alt="abrir opciones" />
-          </button>
+          <div className="toggle-container">
+            <button
+              type="button"
+              className={`autocomplete-toggle ${
+                shouldShowDropdown ? 'open' : ''
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onToggle?.();
+              }}
+            >
+              <img src="/dropdown-arrow.svg" alt="abrir opciones" />
+            </button>
+          </div>
         )}
       </div>
 

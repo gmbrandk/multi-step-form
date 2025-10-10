@@ -92,46 +92,17 @@ export const buildClienteFields = ({
         }, []);
 
         return (
-          <div style={{ position: 'relative' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                border: '1px solid #ccc',
-                borderRadius: '3px',
-                overflow: 'hidden',
-                background: 'white',
-                marginBottom: '10px',
-                padding: '15px',
-                width: '100%',
-                boxSizing: 'border-box',
-                fontFamily: 'montserrat',
-                color: '#2c3e50',
-                fontSize: '13px',
-              }}
-            >
+          <div className="telefono-wrapper">
+            <div className="telefono-container">
               <div
+                className="telefono-prefix"
                 onClick={() => setShowDropdown((v) => !v)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#f9f9f9',
-                  padding: '0 10px 0 0 ',
-                  borderRight: '1px solid #ddd',
-                  cursor: 'pointer',
-                }}
               >
                 <img
                   src={paisSeleccionado.bandera}
                   alt={paisSeleccionado.pais}
-                  width="20"
-                  height="14"
-                  style={{ borderRadius: '2px' }}
                 />
-                <span style={{ fontSize: '13px', color: '#333' }}>
-                  {paisSeleccionado.codigo}
-                </span>
+                <span>{paisSeleccionado.codigo}</span>
               </div>
 
               <input
@@ -140,68 +111,27 @@ export const buildClienteFields = ({
                 placeholder="Ej: 913458768"
                 value={value || ''}
                 onChange={handleTelefonoChange}
-                onKeyDown={navHandlers.generic.telefono} // ✅ corregido
-                style={{
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  border: 'none',
-                  padding: '0 10px',
-                  margin: '0',
-                  outline: 'none',
-                  fontSize: '13px',
-                }}
+                onKeyDown={navHandlers.generic.telefono}
+                className="telefono-input"
                 disabled={locked}
                 ref={inputRef}
               />
             </div>
 
             {showDropdown && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100%)',
-                  left: 0,
-                  right: 0,
-                  background: 'white',
-                  border: '1px solid #ccc',
-                  borderRadius: '6px',
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  zIndex: 2000,
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                }}
-              >
+              <div className="telefono-dropdown">
                 {prefijosTelefonicos.map((p, i) => (
                   <div
                     key={`${p.iso}-${i}`}
+                    className="telefono-item"
                     onClick={() => {
                       handleSelectPais(p);
                       setShowDropdown(false);
                     }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      cursor: 'pointer',
-                    }}
                   >
-                    <img
-                      src={p.bandera}
-                      alt={p.pais}
-                      width="20"
-                      height="14"
-                      style={{ borderRadius: '2px' }}
-                    />
-                    <span
-                      style={{ flex: 1, fontWeight: 'bold', fontSize: '13px' }}
-                    >
-                      {p.pais}
-                    </span>
-                    <span style={{ color: '#2c3e50', fontSize: '13px' }}>
-                      {p.codigo}
-                    </span>
+                    <img src={p.bandera} alt={p.pais} />
+                    <span className="telefono-pais">{p.pais}</span>
+                    <span className="telefono-codigo">{p.codigo}</span>
                   </div>
                 ))}
               </div>

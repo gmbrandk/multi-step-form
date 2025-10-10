@@ -80,7 +80,6 @@ body {
   padding: 15px;
   border: 1px solid #ccc;
   border-radius: 3px;
-  margin-bottom: 10px;
   width: 100%;
   box-sizing: border-box;
   font-family: montserrat;
@@ -143,6 +142,7 @@ body {
 .autocomplete-wrapper {
   position: relative;
   width: 100%;
+  margin-bottom: 10px;
 }
 
 .msform .autocomplete-input:focus {
@@ -230,20 +230,129 @@ body {
   position: absolute;
   right: 10px;
   top: 50%;
-  transform: translateY(-50%) rotate(0deg);
+  transform: translateY(-50%);
   border: none;
   background: transparent;
   padding: 4px;
   cursor: pointer;
-  transition: transform 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .msform .autocomplete-toggle img {
   width: 14px;
   height: 14px;
-  pointer-events: none; /* no bloquea clicks */
+  pointer-events: none;
+  transition: transform 0.2s ease-in-out;
+  transform-origin: center; /* 💡 se asegura que gire en su centro */
 }
 
-.msform .autocomplete-toggle.open {
-  transform: translateY(-50%) rotate(180deg);
+.msform .autocomplete-toggle.open img {
+  transform: rotate(180deg);
+}
+
+/* Input Telefono*/
+
+/* === Campo de teléfono === */
+.msform .telefono-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Contenedor del input y el selector de país */
+.msform .telefono-container {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  overflow: hidden;
+  background: white;
+  margin-bottom: 10px;
+  padding: 15px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: montserrat, arial, sans-serif;
+  color: #2c3e50;
+  font-size: 13px;
+}
+
+/* Selector de país (bandera + código) */
+.msform .telefono-prefix {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f9f9f9;
+  padding: 0 10px 0 0;
+  border-right: 1px solid #ddd;
+  cursor: pointer;
+}
+
+.msform .telefono-prefix img {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.msform .telefono-prefix span {
+  font-size: 13px;
+  color: #333;
+}
+
+/* Input del número de teléfono */
+.msform .telefono-input {
+  flex: 1;
+  border: none;
+  padding: 0 10px;
+  margin: 0;
+  outline: none;
+  font-size: 13px;
+  background: transparent;
+  color: #2c3e50;
+}
+
+/* Lista desplegable de países */
+.msform .telefono-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 2000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Cada opción del dropdown */
+.msform .telefono-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.msform .telefono-item:hover {
+  background: #f1f3f4;
+}
+
+.msform .telefono-item img {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.msform .telefono-item .telefono-pais {
+  flex: 1;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.msform .telefono-item .telefono-codigo {
+  color: #2c3e50;
+  font-size: 13px;
 }

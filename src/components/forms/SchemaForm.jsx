@@ -239,7 +239,7 @@ export function SchemaForm({
               disabled={readOnly || field.disabled}
               onChange={(e) => onChange(name, e.target.value)}
               onKeyDown={field.onKeyDown}
-              style={{ width: '100%' }}
+              style={{ width: '100%', marginBottom: '10px' }}
               maxLength={field.maxLength}
               inputMode={field.inputMode}
               ref={attachRef(field, idx)}
