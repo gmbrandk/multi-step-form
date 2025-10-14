@@ -1,5 +1,4 @@
-// components/Input.jsx
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 export const Input = forwardRef(
   (
@@ -15,21 +14,39 @@ export const Input = forwardRef(
       description,
       onChange,
       onKeyDown,
+      onFocus,
+      onBlur,
+      onPointerDown,
+      onClick,
+      onInput,
       style,
-      className = '',
+      classes = {}, // 🔹 Un solo objeto para todas las clases
       maxLength,
       inputMode,
+      autoComplete = 'off',
     },
     ref
   ) => {
+    const {
+      root = '', // clase para el contenedor
+      label: labelCls = '', // clase para el label
+      input = '', // clase para el input
+      description: descCls = '', // clase para la descripción
+    } = classes;
+
     return (
-      <div className={`input-wrapper ${className}`} style={style}>
+      <div className={`input-wrapper ${root}`} style={style}>
+        {/* 🔹 Etiqueta opcional */}
         {label && (
-          <label htmlFor={id || name} className="input-label">
+          <label
+            htmlFor={id || name}
+            className={`sr-only input-label ${labelCls}`}
+          >
             {typeof label === 'string' ? label : label?.name}
           </label>
         )}
 
+        {/* 🔹 Campo de texto real */}
         <input
           id={id || name}
           name={name}
@@ -40,14 +57,23 @@ export const Input = forwardRef(
           readOnly={readOnly}
           onChange={onChange}
           onKeyDown={onKeyDown}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onPointerDown={onPointerDown}
+          onClick={onClick}
+          onInput={onInput}
           maxLength={maxLength}
           inputMode={inputMode}
+          autoComplete={autoComplete}
+          className={`input-field ${input}`} // combina base + personalizada
           ref={ref}
-          className="input-field"
         />
 
+        {/* 🔹 Descripción opcional */}
         {description && (
-          <small className="input-description">{description}</small>
+          <small className={`input-description ${descCls}`}>
+            {description}
+          </small>
         )}
       </div>
     );

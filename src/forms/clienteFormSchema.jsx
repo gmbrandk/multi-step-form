@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import prefijosTelefonicos from '../prefijosTelefonicos.json';
-import { TelefonoField } from '../components/fields/TelefonoFIeld';
+import { useState } from 'react';
+import prefijosTelefonicos from '../prefixPhoneNumber.json';
 
 export const buildClienteFields = ({
   cliente,
@@ -31,31 +30,33 @@ export const buildClienteFields = ({
     {
       name: 'dni',
       type: 'autocomplete',
-      label: { name: 'DNI', className: 'sr-only' },
-      placeholder: 'Ej: 45591954',
       gridColumn: '1 / 4',
-      value: dniState.dniBusqueda,
-      suggestions: dniState.suggestions,
-      showDropdown: dniState.showDropdown,
-      activeIndex: dniState.activeIndex,
-      onChange: dniHandlers.handleDniChange,
-      onSelect: dniHandlers.handleSelectCliente,
-      onKeyDown: dniHandlers.handleKeyDownDni,
-      onPointerDown: dniHandlers.handleDniPointerDown,
-      onFocus: dniHandlers.handleDniFocus,
-      onBlur: dniHandlers.handleDniBlur,
-      maxLength: 8,
-      inputMode: 'numeric',
-      disabled: false,
-      inputRef: (el) => (fieldRefs.current['dni'] = el),
-      renderSuggestion: (c) => (
-        <div className="autocomplete-item">
-          <span className="left-span">{c.dni}</span>
-          <span className="right-span">
-            {c.nombres} {c.apellidos}
-          </span>
-        </div>
-      ),
+      props: {
+        label: { name: 'DNI', className: 'sr-only' },
+        placeholder: 'Ej: 45591954',
+        value: dniState.dniBusqueda,
+        suggestions: dniState.suggestions,
+        showDropdown: dniState.showDropdown,
+        activeIndex: dniState.activeIndex,
+        onChange: dniHandlers.handleDniChange,
+        onSelect: dniHandlers.handleSelectCliente,
+        onKeyDown: dniHandlers.handleKeyDownDni,
+        onPointerDown: dniHandlers.handleDniPointerDown,
+        onFocus: dniHandlers.handleDniFocus,
+        onBlur: dniHandlers.handleDniBlur,
+        maxLength: 8,
+        inputMode: 'numeric',
+        disabled: false,
+        inputRef: (el) => (fieldRefs.current['dni'] = el),
+        renderSuggestion: (c) => (
+          <div className="autocomplete-item">
+            <span className="left-span">{c.dni}</span>
+            <span className="right-span">
+              {c.nombres} {c.apellidos}
+            </span>
+          </div>
+        ),
+      },
     },
     {
       name: 'nombres',
@@ -92,26 +93,28 @@ export const buildClienteFields = ({
     {
       name: 'email',
       type: 'autocomplete',
-      label: { name: 'Email', className: 'sr-only' },
-      placeholder: 'Ej: ejemplo@correo.com',
       gridColumn: '1 / 4',
-      disabled: locked,
-      suggestions: emailState.emailSuggestions,
-      showDropdown: emailState.showEmailDropdown,
-      activeIndex: emailState.activeEmailIndex,
-      onFocus: emailHandlers.handleEmailFocus,
-      onBlur: emailHandlers.handleEmailBlur,
-      onKeyDown: emailHandlers.handleKeyDownEmail,
-      onSelect: emailHandlers.handleEmailSelect,
-      onPointerDown: emailHandlers.toggleEmailDropdown,
-      withToggle: true,
-      inputRef: (el) => (fieldRefs.current['email'] = el),
-      renderSuggestion: (s) =>
-        s === '__manual__' ? (
-          <em className="email-span">Escribir manualmente</em>
-        ) : (
-          <span className="email-span">{s}</span>
-        ),
+      props: {
+        label: { name: 'Email', className: 'sr-only' },
+        placeholder: 'Ej: ejemplo@correo.com',
+        disabled: locked,
+        suggestions: emailState.emailSuggestions,
+        showDropdown: emailState.showEmailDropdown,
+        activeIndex: emailState.activeEmailIndex,
+        onFocus: emailHandlers.handleEmailFocus,
+        onBlur: emailHandlers.handleEmailBlur,
+        onKeyDown: emailHandlers.handleKeyDownEmail,
+        onSelect: emailHandlers.handleEmailSelect,
+        onPointerDown: emailHandlers.toggleEmailDropdown,
+        withToggle: true,
+        inputRef: (el) => (fieldRefs.current['email'] = el),
+        renderSuggestion: (s) =>
+          s === '__manual__' ? (
+            <em className="email-span">Escribir manualmente</em>
+          ) : (
+            <span className="email-span">{s}</span>
+          ),
+      },
     },
     {
       name: 'direccion',

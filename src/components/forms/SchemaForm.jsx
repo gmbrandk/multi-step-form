@@ -1,6 +1,6 @@
+import { AutocompleteField } from '../fields/AutocompleteField';
 import { TelefonoField } from '../fields/TelefonoFIeld';
-import { AutocompleteField } from './AutocompleteField';
-
+import { Input } from '../InputBase';
 export function SchemaForm({
   values = {},
   onChange,
@@ -69,34 +69,10 @@ export function SchemaForm({
           return (
             <AutocompleteField
               key={name}
-              id={name}
-              label={label}
-              placeholder={field.placeholder}
               value={value}
-              disabled={readOnly || field.disabled}
-              suggestions={field.suggestions}
-              showDropdown={field.showDropdown}
-              activeIndex={field.activeIndex}
+              onChange={(v) => onChange(name, v)}
+              {...field.props} // 👈 todos los demás props agrupados
               gridColumn={column}
-              inputMode={field.inputMode}
-              maxLength={field.maxLength}
-              renderSuggestion={field.renderSuggestion}
-              withToggle={field.withToggle}
-              onChange={(e) => {
-                onChange(name, e.target.value);
-                field.onChange?.(e);
-              }}
-              onKeyDown={field.onKeyDown}
-              onPointerDown={field.onPointerDown}
-              onFocus={field.onFocus}
-              onBlur={field.onBlur}
-              onSelect={(item, e) => {
-                // ⚡ Ahora pasa updateValue y values
-                if (field.onSelect) {
-                  field.onSelect(item, e, updateValue, values);
-                }
-              }}
-              inputRef={attachRef(field, idx)}
             />
           );
         }
@@ -161,7 +137,11 @@ export function SchemaForm({
         // ✅ Select
         if (type === 'select') {
           return (
-            <div key={name} style={{ gridColumn: column }}>
+            <div
+              key={name}
+              className="input-container"
+              style={{ gridColumn: column }}
+            >
               <label htmlFor={name} className={label?.className}>
                 {label?.name || label}
               </label>
@@ -191,7 +171,11 @@ export function SchemaForm({
         // ✅ Textarea
         if (type === 'textarea') {
           return (
-            <div key={name} style={{ gridColumn: column }}>
+            <div
+              key={name}
+              className="input-container"
+              style={{ gridColumn: column }}
+            >
               <label htmlFor={name} className={label?.className}>
                 {label?.name || label}
               </label>
@@ -216,7 +200,11 @@ export function SchemaForm({
         // ✅ Output
         if (type === 'output') {
           return (
-            <div key={name} style={{ gridColumn: column }}>
+            <div
+              key={name}
+              className="input-container"
+              style={{ gridColumn: column }}
+            >
               <label htmlFor={name} className={label?.className}>
                 {label?.name || label}
               </label>
@@ -239,27 +227,27 @@ export function SchemaForm({
 
         // ✅ Input por defecto
         return (
-          <div key={name} style={{ gridColumn: column }}>
-            <label htmlFor={name} className={label?.className}>
-              {label?.name || label}
-            </label>
-            <input
+          <div
+            key={name}
+            className="input-container"
+            style={{ gridColumn: column }}
+          >
+            <Input
               id={name}
               name={name}
               type={type || 'text'}
+              label={label?.name || label}
               placeholder={field.placeholder}
               value={value}
               disabled={readOnly || field.disabled}
               onChange={(e) => onChange(name, e.target.value)}
               onKeyDown={field.onKeyDown}
-              style={{ width: '100%', marginBottom: '10px' }}
               maxLength={field.maxLength}
               inputMode={field.inputMode}
               ref={attachRef(field, idx)}
+              classes={{}}
+              description={showDescriptions ? field.description : undefined}
             />
-            {showDescriptions && field.description && (
-              <small>{field.description}</small>
-            )}
           </div>
         );
       })}

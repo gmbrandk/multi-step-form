@@ -3,20 +3,22 @@ export function AutocompleteComponent({
   label,
   placeholder,
   value,
-  disabled,
-  gridColumn,
-  withToggle,
-  shouldShowDropdown,
-  uniqueSuggestions,
-  activeIndex,
+  suggestions = [],
+  showDropdown = false, // ← viene del padre (puede ser controlado externamente)
+  activeIndex = -1,
+  disabled = false,
+  gridColumn = '1 / 4',
   onChange,
   onSelect,
+  onKeyDown,
+  onPointerDown,
   onFocus,
   onBlur,
-  onKeyDown,
-  onToggle,
+  inputMode,
+  maxLength,
   renderSuggestion,
   inputRef,
+  withToggle = false, // 👈 si tiene botón desplegable
 }) {
   const displayValue =
     typeof value === 'object' ? value.label || value.codigo || '' : value || '';

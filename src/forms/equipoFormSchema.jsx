@@ -11,28 +11,30 @@ export const buildEquipoFields = ({ equipo, locked, nroSerie, navigation }) => {
     {
       name: 'nroSerie',
       type: 'autocomplete',
-      label: { name: 'Nro. Serie', className: 'sr-only' },
-      placeholder: 'Ej: 3BO52134Q',
       gridColumn: '1 / 4',
-      value: nroSerieState.nroSerieBusqueda,
-      suggestions: nroSerieState.suggestions,
-      showDropdown: nroSerieState.showDropdown,
-      activeIndex: nroSerieState.activeIndex,
-      onChange: nroSerieHandlers.handleNroSerieChange,
-      onSelect: nroSerieHandlers.handleSelectEquipo,
-      onKeyDown: nroSerieHandlers.handleKeyDownNroSerie,
-      onPointerDown: nroSerieHandlers.handleNroSeriePointerDown,
-      onFocus: nroSerieHandlers.handleNroSerieFocus,
-      onBlur: nroSerieHandlers.handleNroSerieBlur,
-      disabled: false,
-      inputRef: (el) => (fieldRefs.current['nroSerie'] = el),
-      renderSuggestion: (eq) => (
-        <div className="autocomplete-item">
-          <span className="left-span">{eq.nroSerie}</span>
-          <span className="right-span">{eq.marca}</span>
-          <span className="right-span">{eq.modelo}</span>
-        </div>
-      ),
+      props: {
+        label: { name: 'Nro. Serie', className: 'sr-only' },
+        placeholder: 'Ej: 3BO52134Q',
+        value: nroSerieState.nroSerieBusqueda,
+        suggestions: nroSerieState.suggestions,
+        showDropdown: nroSerieState.showDropdown,
+        activeIndex: nroSerieState.activeIndex,
+        onChange: nroSerieHandlers.handleNroSerieChange,
+        onSelect: nroSerieHandlers.handleSelectEquipo,
+        onKeyDown: nroSerieHandlers.handleKeyDownNroSerie,
+        onPointerDown: nroSerieHandlers.handleNroSeriePointerDown,
+        onFocus: nroSerieHandlers.handleNroSerieFocus,
+        onBlur: nroSerieHandlers.handleNroSerieBlur,
+        disabled: false,
+        inputRef: (el) => (fieldRefs.current['nroSerie'] = el),
+        renderSuggestion: (eq) => (
+          <div className="autocomplete-item">
+            <span className="left-span">{eq.nroSerie}</span>
+            <span className="right-span">{eq.marca}</span>
+            <span className="right-span">{eq.modelo}</span>
+          </div>
+        ),
+      },
     },
     {
       name: 'tipo',

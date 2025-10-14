@@ -1,59 +1,114 @@
-import { AutocompleteComponent } from './AutocompleteComponent';
+import { Input } from '../InputBase';
 import { useAutocomplete } from './useAutoComplete';
 
 export function AutocompleteField({
-  field,
+  id,
+  label,
+  placeholder,
   value,
+  suggestions = [],
+  showDropdown = false,
+  activeIndex = -1,
+  disabled = false,
+  locked,
+  gridColumn = '1 / 4',
   onChange,
-  updateValue,
-  values,
-  readOnly,
+  onSelect,
+  onKeyDown,
+  onPointerDown,
+  onFocus,
+  onBlur,
+  inputMode,
+  maxLength,
+  renderSuggestion,
+  inputRef,
+  withToggle = false,
 }) {
   const {
-    focused,
-    setFocused,
-    manualToggle,
-    setManualToggle,
     uniqueSuggestions,
     shouldShowDropdown,
-  } = useAutocomplete({ suggestions: field.suggestions });
-
-  const showDropdown = shouldShowDropdown(field.showDropdown);
+    displayValue,
+    handleFocus,
+    handleBlur,
+    toggleDropdown,
+    closeDropdown,
+  } = useAutocomplete({ suggestions, value, showDropdown });
 
   return (
-    <AutocompleteComponent
-      id={field.name}
-      label={field.label}
-      placeholder={field.placeholder}
-      value={value}
-      disabled={readOnly || field.disabled}
-      gridColumn={
-        typeof field.gridColumn === 'function'
-          ? field.gridColumn(values)
-          : field.gridColumn
-      }
-      withToggle={field.withToggle}
-      shouldShowDropdown={showDropdown}
-      uniqueSuggestions={uniqueSuggestions}
-      activeIndex={field.activeIndex}
-      onChange={(e) => {
-        onChange(field.name, e.target.value);
-        field.onChange?.(e);
-      }}
-      onSelect={(item, e) => field.onSelect?.(item, e, updateValue, values)}
-      onKeyDown={field.onKeyDown}
-      onFocus={(e) => {
-        setFocused(true);
-        field.onFocus?.(e);
-      }}
-      onBlur={(e) => {
-        setTimeout(() => setFocused(false), 150);
-        field.onBlur?.(e);
-        setManualToggle(false);
-      }}
-      onToggle={() => setManualToggle((prev) => !prev)}
-      renderSuggestion={field.renderSuggestion}
-      inputRef={field.inputRef}
-    />
+    <div
+      className="autocomplete-wrapper"
+      style={{ gridColumn, position: 'relative' }}
+    >
+      {label && (
+        <label htmlFor={id} className={label?.className}>
+          {label?.name || label}
+        </label>
+      )}
+
+      <div className="autocomplete-input-wrapper">
+        <Input
+          id={id}
+          name={id}
+          type="text"
+          placeholder={placeholder}
+          value={displayValue}
+          disabled={disabled}
+          onChange={onChange}
+          onKeyDown={onKeyDown}
+          onPointerDown={onPointerDown}
+          onFocus={(e) => handleFocus(e, onFocus)}
+          onBlur={(e) => handleBlur(e, onBlur)}
+          autoComplete="off"
+          inputMode={inputMode}
+          maxLength={maxLength}
+          aria-autocomplete="list"
+          aria-controls={`${id}-listbox`}
+          aria-expanded={shouldShowDropdown}
+          className="autocomplete-input"
+          ref={inputRef}
+        />
+
+        {/* 🔽 Botón con la flecha */}
+        {withToggle && (
+          <button
+            type="button"
+            className={`autocomplete-toggle ${
+              shouldShowDropdown ? 'open' : ''
+            } ${!locked ? 'disabled' : ''}`}
+            onMouseDown={() => locked && toggleDropdown}
+          >
+            <img src="/dropdown-arrow.svg" alt="abrir opciones" />
+          </button>
+        )}
+      </div>
+
+      {/* 🔽 Dropdown de sugerencias */}
+      {!locked && shouldShowDropdown && (
+        <ul id={`${id}-listbox`} role="listbox" className="autocomplete-list">
+          {uniqueSuggestions.map((s, index) => {
+            const isActive = activeIndex === index;
+            return (
+              <li
+                key={s._id || `${id}-${index}`}
+                role="option"
+                aria-selected={isActive}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSelect?.(s);
+                  closeDropdown();
+                }}
+                className={`autocomplete-item ${isActive ? 'active' : ''}`}
+              >
+                {renderSuggestion ? (
+                  renderSuggestion(s)
+                ) : (
+                  <span>{s.label || String(s)}</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

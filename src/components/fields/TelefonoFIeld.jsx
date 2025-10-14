@@ -1,20 +1,25 @@
 // components/TelefonoField.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Input } from '../InputBase';
+import { useDropdown } from './useDropdown';
 
 export function TelefonoField({
   value,
   onChange,
-  disabled = false, // usamos la prop estándar, no "locked"
+  locked,
   paisSeleccionado,
   prefijosTelefonicos = [],
   handleSelectPais,
   navHandlers,
   fieldRefs,
+  maxLength,
   gridColumn = '1 / 4',
 }) {
-  const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef(null);
+
+  const { isOpen, toggle, handleSelect, dropdownRef } = useDropdown({
+    onSelect: (p) => handleSelectPais(p),
+  });
 
   const handleTelefonoChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '');
@@ -28,40 +33,47 @@ export function TelefonoField({
   }, [fieldRefs]);
 
   return (
-    <div className="telefono-wrapper" style={{ gridColumn }}>
-      <div className="telefono-container">
+    <div
+      className={`telefono-wrapper `}
+      style={{ gridColumn }}
+      ref={dropdownRef}
+    >
+      <div className={`telefono-container ${locked ? 'disabled' : ''}`}>
         {/* Prefijo país */}
         <div
-          className={`telefono-prefix ${showDropdown ? 'open' : ''}`}
-          onClick={() => !disabled && setShowDropdown((v) => !v)}
+          className={`telefono-prefix ${isOpen ? 'open' : ''}  ${
+            locked ? 'disabled' : ''
+          } `}
+          onClick={() => !locked && toggle()}
         >
           <img src={paisSeleccionado.bandera} alt={paisSeleccionado.pais} />
-          <span>{paisSeleccionado.codigo}</span>
         </div>
 
-        {/* Nuestro Input reutilizable */}
         <Input
           name="telefono"
           placeholder="Ej: 913458768"
           value={value || ''}
           onChange={handleTelefonoChange}
           onKeyDown={navHandlers?.generic?.telefono}
-          disabled={disabled}
+          disabled={locked}
+          maxLength={maxLength}
           ref={inputRef}
-          className="telefono-input"
+          classes={{
+            input: 'telefono-input',
+          }}
+          style={{
+            border: 'none',
+          }}
         />
       </div>
 
-      {showDropdown && (
+      {isOpen && (
         <div className="telefono-dropdown">
           {prefijosTelefonicos.map((p, i) => (
             <div
               key={`${p.iso}-${i}`}
               className="telefono-item"
-              onClick={() => {
-                handleSelectPais(p);
-                setShowDropdown(false);
-              }}
+              onClick={(e) => handleSelect(p, e)}
             >
               <img src={p.bandera} alt={p.pais} />
               <span className="telefono-pais">{p.pais}</span>

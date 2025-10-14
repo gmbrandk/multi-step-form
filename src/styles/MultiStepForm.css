@@ -142,7 +142,7 @@ body {
 .autocomplete-wrapper {
   position: relative;
   width: 100%;
-  margin-bottom: 10px;
+  padding-bottom: 10px;
 }
 
 .msform .autocomplete-input:focus {
@@ -240,6 +240,20 @@ body {
   justify-content: center;
 }
 
+.msform .autocomplete-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .msform .autocomplete-toggle img {
   width: 14px;
   height: 14px;
@@ -258,8 +272,13 @@ body {
 .msform .telefono-wrapper {
   position: relative;
   width: 100%;
+  padding: 0;
 }
 
+.msform .telefono-wrapper .disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
 /* Contenedor del input y el selector de país */
 .msform .telefono-container {
   display: flex;
@@ -269,12 +288,14 @@ body {
   overflow: hidden;
   background: white;
   margin-bottom: 10px;
-  padding-left: 15px; 
+  padding: 15px;
   width: 100%;
   box-sizing: border-box;
-  font-family: montserrat, arial, sans-serif;
   color: #2c3e50;
   font-size: 13px;
+  border-radius: 3px;
+  width: 100%;
+  font-family: montserrat;
 }
 
 /* Selector de país (bandera + código) */
@@ -282,10 +303,20 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: white;
+  background: transparent;
   padding: 0 10px 0 0;
   border-right: 1px solid #ddd;
   cursor: pointer;
+}
+
+.msform .telefono-prefix .disabled {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  padding: 0 10px 0 0;
+  border-right: 1px solid #ddd;
+  cursor: not-allowed;
 }
 
 .msform .telefono-prefix img {
@@ -314,7 +345,7 @@ body {
 /* Lista desplegable de países */
 .msform .telefono-dropdown {
   position: absolute;
-  top: 100%;
+  top: 82%;
   left: 0;
   right: 0;
   background: white;
@@ -358,11 +389,13 @@ body {
 }
 
 /*INPUT BASE*/
+.input-container {
+  margin-bottom: 10px;
+}
 .input-wrapper {
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom: 10px;
 }
 
 .input-label {
