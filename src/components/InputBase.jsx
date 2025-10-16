@@ -20,7 +20,7 @@ export const Input = forwardRef(
       onClick,
       onInput,
       style,
-      classes = {}, // 🔹 Un solo objeto para todas las clases
+      classes = {},
       maxLength,
       inputMode,
       autoComplete = 'off',
@@ -28,27 +28,29 @@ export const Input = forwardRef(
     ref
   ) => {
     const {
-      root = '', // clase para el contenedor
-      label: labelCls = '', // clase para el label
-      input = '', // clase para el input
-      description: descCls = '', // clase para la descripción
+      root = '',
+      label: labelCls = '',
+      input = '',
+      description: descCls = '',
     } = classes;
+
+    const inputId = id || name;
 
     return (
       <div className={`input-wrapper ${root}`} style={style}>
-        {/* 🔹 Etiqueta opcional */}
+        {/* Label accesible */}
         {label && (
           <label
-            htmlFor={id || name}
+            htmlFor={inputId}
             className={`sr-only input-label ${labelCls}`}
           >
             {typeof label === 'string' ? label : label?.name}
           </label>
         )}
 
-        {/* 🔹 Campo de texto real */}
+        {/* Campo de entrada */}
         <input
-          id={id || name}
+          id={inputId}
           name={name}
           type={type}
           placeholder={placeholder}
@@ -65,13 +67,17 @@ export const Input = forwardRef(
           maxLength={maxLength}
           inputMode={inputMode}
           autoComplete={autoComplete}
-          className={`input-field ${input}`} // combina base + personalizada
+          aria-describedby={description ? `${inputId}-desc` : undefined}
+          className={`input-field ${input}`}
           ref={ref}
         />
 
-        {/* 🔹 Descripción opcional */}
+        {/* Descripción accesible */}
         {description && (
-          <small className={`input-description ${descCls}`}>
+          <small
+            id={`${inputId}-desc`}
+            className={`input-description ${descCls}`}
+          >
             {description}
           </small>
         )}
