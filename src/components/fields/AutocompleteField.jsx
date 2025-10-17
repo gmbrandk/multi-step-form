@@ -9,7 +9,6 @@ export function AutocompleteField({
   suggestions = [],
   showDropdown = false,
   activeIndex = -1,
-  disabled = false,
   locked,
   gridColumn = '1 / 4',
   onChange,
@@ -34,6 +33,11 @@ export function AutocompleteField({
     closeDropdown,
   } = useAutocomplete({ suggestions, value, showDropdown });
 
+  // console.log(
+  //   '%c[AutocompleteField] locked →',
+  //   'color: orange; font-weight: bold;',
+  //   locked
+  // );
   return (
     <div
       className="autocomplete-wrapper"
@@ -52,7 +56,7 @@ export function AutocompleteField({
           type="text"
           placeholder={placeholder}
           value={displayValue}
-          disabled={disabled}
+          disabled={locked}
           onChange={onChange}
           onKeyDown={onKeyDown}
           onPointerDown={onPointerDown}
@@ -74,7 +78,7 @@ export function AutocompleteField({
             type="button"
             className={`autocomplete-toggle ${
               shouldShowDropdown ? 'open' : ''
-            } ${!locked ? 'disabled' : ''}`}
+            } ${locked ? 'disabled' : ''}`}
             onMouseDown={() => locked && toggleDropdown}
           >
             <img src="/dropdown-arrow.svg" alt="abrir opciones" />

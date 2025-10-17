@@ -1,4 +1,3 @@
-// components/StepWizardCore.jsx
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useFramerStepAnimation } from '../logic/useFramerStepAnimation';
@@ -9,9 +8,11 @@ export function StepWizardCore({
   steps,
   onStepSubmit,
   onFinalSubmit,
-  getNextLabel, // 👈 NUEVO
-  getPrevLabel, // 👈 opcional
-  getSubmitLabel, // 👈 opcional
+  getNextLabel,
+  getPrevLabel,
+  getSubmitLabel,
+  onError, // 🔔 callback de error (toast, swal, etc)
+  onSuccess, // 🔔 callback de éxito
 }) {
   const [step, setStep] = useState(0);
   const [prevDirection, setPrevDirection] = useState(0);
@@ -27,10 +28,9 @@ export function StepWizardCore({
   const visibleSteps = steps.filter((s) => !s.hidden);
   const CurrentStep =
     visibleSteps[step]?.Component ?? (() => <p>No hay pasos</p>);
-
   const current = visibleSteps[step];
 
-  // auto-focus en cada step
+  // Auto-focus en cada step
   useEffect(() => {
     if (fieldsetRef.current) {
       const firstInput = fieldsetRef.current.querySelector(
@@ -62,15 +62,36 @@ export function StepWizardCore({
     }, 650);
   };
 
+  // 🔹 Manejo del paso siguiente con validación
   const handleNext = async () => {
     const done = await onStepSubmit?.(current);
-    if (done !== false) {
+
+    if (done?.success) {
+      onSuccess?.(done.message || `Paso "${current.title}" completado.`);
       goToStep(step + 1, 1);
+    } else if (done?.message) {
+      onError?.(done.message);
+    } else if (done === false) {
+      // compatibilidad con hooks antiguos
+      onError?.('Ocurrió un error en este paso.');
     }
   };
 
   const goPrev = () => {
     goToStep(step - 1, -1);
+  };
+
+  // 🔹 Submit final con feedback
+  const handleFinal = async () => {
+    const res = await onFinalSubmit?.();
+
+    if (res?.success) {
+      onSuccess?.('Orden de servicio creada correctamente.');
+    } else if (res?.message) {
+      onError?.(res.message);
+    } else if (res === false) {
+      onError?.('Error al finalizar la orden de servicio.');
+    }
   };
 
   const variants = useFramerStepAnimation({
@@ -95,6 +116,7 @@ export function StepWizardCore({
       >
         {providerInfo} ({providerType})
       </div>
+
       <div className="form-wrapper">
         <ProgressBar step={step} labels={visibleSteps.map((s) => s.title)} />
 
@@ -124,7 +146,7 @@ export function StepWizardCore({
                     onClick={goPrev}
                     disabled={isAnimating}
                   >
-                    {getPrevLabel ? getPrevLabel(current) : 'Previous'}
+                    {getPrevLabel ? getPrevLabel(current) : 'Anterior'}
                   </button>
                 )}
                 {step < visibleSteps.length - 1 ? (
@@ -134,15 +156,16 @@ export function StepWizardCore({
                     onClick={handleNext}
                     disabled={isAnimating}
                   >
-                    {getNextLabel ? getNextLabel(current) : 'Next'}
+                    {getNextLabel ? getNextLabel(current) : 'Siguiente'}
                   </button>
                 ) : (
                   <button
                     type="button"
                     className="submit action-button"
-                    onClick={onFinalSubmit}
+                    onClick={handleFinal}
+                    disabled={isAnimating}
                   >
-                    {getSubmitLabel ? getSubmitLabel(current) : 'Submit'}
+                    {getSubmitLabel ? getSubmitLabel(current) : 'Finalizar'}
                   </button>
                 )}
               </div>

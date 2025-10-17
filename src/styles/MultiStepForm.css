@@ -254,6 +254,10 @@ body {
   justify-content: center;
 }
 
+.msform .autocomplete-toggle.disabled {
+  cursor: not-allowed;
+}
+
 .msform .autocomplete-toggle img {
   width: 14px;
   height: 14px;

@@ -25,7 +25,11 @@ export const buildClienteFields = ({
   });
 
   const handleSelectPais = (p) => setPaisSeleccionado(p);
-
+  // console.log(
+  //   '%c[buildClienteFields] locked →',
+  //   'color: orange; font-weight: bold;',
+  //   locked
+  // );
   const fields = [
     {
       name: 'dni',
@@ -97,7 +101,7 @@ export const buildClienteFields = ({
       props: {
         label: { name: 'Email', className: 'sr-only' },
         placeholder: 'Ej: ejemplo@correo.com',
-        disabled: locked,
+        locked,
         suggestions: emailState.emailSuggestions,
         showDropdown: emailState.showEmailDropdown,
         activeIndex: emailState.activeEmailIndex,
