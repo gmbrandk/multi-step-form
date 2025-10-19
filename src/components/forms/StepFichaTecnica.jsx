@@ -24,18 +24,20 @@ export function StepFichaTecnica() {
   return (
     <div>
       {Object.keys(baseFicha).map((field) => (
-        <div key={field}>
-          <label htmlFor={field} className="sr-only">
-            {field}
-          </label>
-          <input
-            id={field}
-            name={field}
-            placeholder={baseFicha[field]}
-            value={ficha[field]}
-            onChange={(e) => handleChange(field, e.target.value)}
-            style={{ width: '100%' }}
-          />
+        <div className="input-container">
+          <div className="input-wrapper" key={field}>
+            <label htmlFor={field} className="sr-only">
+              {field}
+            </label>
+            <input
+              id={field}
+              name={field}
+              placeholder={baseFicha[field]}
+              value={ficha[field]}
+              onChange={(e) => handleChange(field, e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
         </div>
       ))}
     </div>

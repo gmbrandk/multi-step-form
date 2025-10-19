@@ -4,49 +4,41 @@ import { getClienteService } from '../services/clienteService';
 import { getEquipoService } from '../services/equipoService';
 import { getOrdenServicioService } from '../services/ordenServicioService';
 
-// --- Reducer ---
 const initialIds = { clienteId: null, equipoId: null, ordenId: null };
 
 function idsReducer(state, action) {
   switch (action.type) {
     case 'SET_CLIENTE':
       return { clienteId: action.payload, equipoId: null, ordenId: null };
-
     case 'SET_EQUIPO':
       if (!state.clienteId) {
         logger.error('No se puede setear equipo sin cliente');
         return state;
       }
       return { ...state, equipoId: action.payload, ordenId: null };
-
     case 'SET_ORDEN':
       if (!state.clienteId || !state.equipoId) {
         logger.error('No se puede setear orden sin cliente y equipo');
         return state;
       }
-      return { ...state, ordenId: action.payload }; // ✅ ahora espera un string
-
+      return { ...state, ordenId: action.payload };
     case 'RESET_CLIENTE':
     case 'RESET_ALL':
       return { clienteId: null, equipoId: null, ordenId: null };
-
     default:
       return state;
   }
 }
 
-// --- Logger helper (puedes adaptarlo a tu logger real) ---
 const logger = {
   log: (...args) =>
     process.env.NODE_ENV === 'development' && console.log(...args),
   error: (...args) => console.error(...args),
 };
 
-// --- Hook principal ---
-export function useOrdenServicioWizard({ tecnicoId } = {}) {
+export function useOrdenServicioWizard({ tecnicoId, onError, onSuccess } = {}) {
   const [ids, dispatch] = useReducer(idsReducer, initialIds);
 
-  // 🔐 Validador centralizado
   const validateIds = (required = []) => {
     for (const key of required) {
       if (!ids[key]) {
@@ -60,13 +52,11 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     return { success: true };
   };
 
-  // 🔄 Reset cliente/equipo/orden
   const resetClienteId = () => {
     logger.log('[Wizard] Reset cliente/equipo/orden');
     dispatch({ type: 'RESET_CLIENTE' });
   };
 
-  // --- Helper: crear equipo ---
   const crearEquipo = async (equipoData, extra = {}) => {
     const res = await getEquipoService().crearEquipo({
       ...equipoData,
@@ -88,7 +78,6 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     }
   };
 
-  // Maneja cada paso del wizard
   const handleStepSubmit = async (currentStep, orden) => {
     logger.log(`[Wizard] Submitting step: ${currentStep.id}`);
     logger.log('[Wizard] Orden actual:', orden);
@@ -99,43 +88,25 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     // === CLIENTE ===
     if (currentStep.id === 'cliente') {
       const dataId = data?._id;
-
       if (dataId) {
         if (ids.clienteId && ids.clienteId === dataId) {
           logger.log('👤 Cliente ya procesado y coincide:', dataId);
           return { success: true };
-        }
-        if (typeof dataId !== 'string') {
-          logger.error('ClienteId inválido recibido');
-          return {
-            success: false,
-            message: 'Error interno: clienteId inválido.',
-          };
         }
         logger.log('👤 Cliente detectado (actualizando ids):', dataId);
         dispatch({ type: 'SET_CLIENTE', payload: dataId });
         return { success: true };
       }
 
-      if (ids.clienteId) {
-        logger.log('⚡ Cliente ya procesado → skip', ids.clienteId);
-        return { success: true };
-      }
-
       logger.log('🆕 Creando nuevo cliente...', data);
       const res = await getClienteService().crearCliente(data);
-
       if (res.success && res.details?.cliente?._id) {
         const nuevoId = res.details.cliente._id;
-        logger.log('✅ Cliente creado:', nuevoId);
         dispatch({ type: 'SET_CLIENTE', payload: nuevoId });
         return { success: true };
       } else {
-        logger.error('❌ Error creando cliente:', res.message);
-        return {
-          success: false,
-          message: res.message || 'Error creando cliente.',
-        };
+        onError?.(res.message);
+        return { success: false, message: res.message };
       }
     }
 
@@ -145,13 +116,7 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
       if (!clienteCheck.success) return clienteCheck;
 
       if (orden.equipo?._id) {
-        logger.log('💻 Equipo existente detectado:', orden.equipo._id);
         dispatch({ type: 'SET_EQUIPO', payload: orden.equipo._id });
-        return { success: true };
-      }
-
-      if (orden.equipo?.especificaciones) {
-        logger.log('📝 Agregar especificaciones sin crear equipo todavía');
         return { success: true };
       }
 
@@ -163,7 +128,6 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
       const clienteCheck = validateIds(['clienteId']);
       if (!clienteCheck.success) return clienteCheck;
 
-      logger.log('🛠️ Creando equipo con ficha técnica...');
       return crearEquipo(orden.equipo, {
         fichaTecnicaManual: orden.fichaTecnica,
       });
@@ -172,33 +136,47 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     return { success: true };
   };
 
-  // Submit final
-
+  // --- SUBMIT FINAL ---
   const handleFinalSubmit = async (orden) => {
     console.log('🚀 Submitting Orden de Servicio final...');
     console.log('[Wizard] IDs finales:', ids);
     console.log('[Wizard] Orden final:', orden);
 
-    // ✅ Validación crítica de IDs
     const idCheck = validateIds(['clienteId', 'equipoId']);
-    if (!idCheck.success) return idCheck;
+    if (!idCheck.success) {
+      onError?.(idCheck.message);
+      return idCheck;
+    }
 
-    // ✅ Validación de lineasServicio
-    for (const [i, linea] of (orden.lineas || []).entries()) {
-      if (!linea.tipoTrabajo) {
-        console.error(`❌ Línea ${i + 1} sin tipoTrabajo válido`, linea);
-        return {
-          success: false,
-          message: `Debe seleccionar un tipo de trabajo válido en la línea ${
-            i + 1
-          }.`,
-        };
+    // 🧩 Validar líneas de servicio antes de construir el payload
+    const lineas = orden.lineas || [];
+    if (lineas.length === 0 && !orden.tipoTrabajo) {
+      const msg = 'Debe completar al menos una línea de servicio.';
+      console.error(msg);
+      onError?.(msg);
+      return { success: false, message: msg };
+    }
+
+    const validTipoTrabajoIds = [
+      '68a74570f2ab41918da7f937',
+      '68afd6a2c19b8c72a13decb0',
+      '68dc9ac76162927555649baa',
+      '68e335329e1eff2fcb38b733',
+    ];
+
+    for (const [i, linea] of lineas.entries()) {
+      if (
+        !linea.tipoTrabajo ||
+        !validTipoTrabajoIds.includes(linea.tipoTrabajo)
+      ) {
+        const msg = `El tipo de trabajo en la línea ${i + 1} no es válido.`;
+        console.error(msg);
+        onError?.(msg);
+        return { success: false, message: msg };
       }
     }
 
     const osService = getOrdenServicioService();
-
-    // 🔹 El hook ya no arma el payload, lo pide al service
     const payload = osService.buildPayload({ ids, orden, tecnicoId });
 
     console.log('[handleFinalSubmit] Payload enviado:', payload);
@@ -206,17 +184,13 @@ export function useOrdenServicioWizard({ tecnicoId } = {}) {
     const res = await osService.crearOrdenServicio(payload);
 
     if (res.success && res.details?.orden?._id) {
-      console.log('✅ Orden de servicio creada con éxito:', res.details.orden);
-
-      // Reducer actualiza estado de IDs
-      dispatch({
-        type: 'SET_ORDEN',
-        payload: res.details.orden._id,
-      });
-
+      console.log('✅ Orden de servicio creada:', res.details.orden);
+      dispatch({ type: 'SET_ORDEN', payload: res.details.orden._id });
+      onSuccess?.('Orden de servicio creada con éxito.');
       return { success: true, details: res.details };
     } else {
       console.error('❌ Error creando orden de servicio:', res.message);
+      onError?.(res.message || 'Error creando orden de servicio.');
       return {
         success: false,
         message: res.message || 'Error creando orden de servicio.',

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { OrdenServicioWizard } from './components/OrdenServicioWizard';
 import { LoginForm } from './components/forms/LoginForm';
 import {
@@ -92,7 +92,12 @@ export default function App() {
   const tecnicoId = usuario._id;
 
   return (
-    <OrdenServicioProvider defaults={baseOrden}>
+    <OrdenServicioProvider
+      defaults={baseOrden}
+      onEvent={(type, payload) => {
+        console.log(`[📡 EVENT] ${type}`, payload);
+      }}
+    >
       <MockButtons />
       {/* Pasamos tecnicoId al wizard */}
       <OrdenServicioWizard tecnicoId={tecnicoId} />

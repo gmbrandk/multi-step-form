@@ -26,8 +26,11 @@ export function StepWizardCore({
   const fieldsetRef = useRef(null);
 
   const visibleSteps = steps.filter((s) => !s.hidden);
-  const CurrentStep =
-    visibleSteps[step]?.Component ?? (() => <p>No hay pasos</p>);
+  const currentStepConfig = visibleSteps[step];
+  const StepComponent =
+    currentStepConfig?.Component ?? (() => <p>No hay pasos</p>);
+  const stepProps = currentStepConfig?.props || {};
+
   const current = visibleSteps[step];
 
   // Auto-focus en cada step
@@ -136,7 +139,7 @@ export function StepWizardCore({
               <h2 className="fs-title">{visibleSteps[step]?.title}</h2>
               <h3 className="fs-subtitle">{visibleSteps[step]?.subtitle}</h3>
 
-              <CurrentStep />
+              <StepComponent {...stepProps} />
 
               <div>
                 {step > 0 && (

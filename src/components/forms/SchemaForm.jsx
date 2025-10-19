@@ -1,7 +1,9 @@
+import { memo } from 'react';
 import { AutocompleteField } from '../fields/AutocompleteField';
 import { TelefonoField } from '../fields/TelefonoFIeld';
 import { Input } from '../InputBase';
-export function SchemaForm({
+
+export const SchemaForm = memo(function SchemaForm({
   values = {},
   onChange,
   fields = [],
@@ -33,7 +35,7 @@ export function SchemaForm({
       }
     };
   };
-
+  console.log('🧱 Render SchemaForm');
   return (
     <div
       style={{
@@ -253,4 +255,4 @@ export function SchemaForm({
       })}
     </div>
   );
-}
+});
