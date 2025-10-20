@@ -69,13 +69,5 @@ export function buildOrdenServicioFields({ linea }) {
         values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
       defaultValue: 0,
     },
-    {
-      name: 'crearLinea',
-      type: 'checkbox',
-      className: 'fs-subtitle inline',
-      label: { name: 'Crear nueva línea de Servicio' },
-      gridColumn: '1 / 4',
-      defaultValue: false,
-    },
   ];
 }

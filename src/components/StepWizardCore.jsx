@@ -1,5 +1,7 @@
+// src/components/StepWizardCore.jsx
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
+import { StepWizardContext } from '../context/StepWizardContext';
 import { useFramerStepAnimation } from '../logic/useFramerStepAnimation';
 import { getClienteService } from '../services/clienteService';
 import { ProgressBar } from './Progressbar';
@@ -11,8 +13,8 @@ export function StepWizardCore({
   getNextLabel,
   getPrevLabel,
   getSubmitLabel,
-  onError, // 🔔 callback de error (toast, swal, etc)
-  onSuccess, // 🔔 callback de éxito
+  onError,
+  onSuccess,
 }) {
   const [step, setStep] = useState(0);
   const [prevDirection, setPrevDirection] = useState(0);
@@ -30,7 +32,6 @@ export function StepWizardCore({
   const StepComponent =
     currentStepConfig?.Component ?? (() => <p>No hay pasos</p>);
   const stepProps = currentStepConfig?.props || {};
-
   const current = visibleSteps[step];
 
   // Auto-focus en cada step
@@ -65,29 +66,34 @@ export function StepWizardCore({
     }, 650);
   };
 
-  // 🔹 Manejo del paso siguiente con validación
-  const handleNext = async () => {
-    const done = await onStepSubmit?.(current);
+  const goPrev = () => goToStep(step - 1, -1);
+  const goNext = () => goToStep(step + 1, 1);
 
+  // Validación al avanzar paso
+  const handleNext = async () => {
+    // 🚫 No ejecutar onStepSubmit si es el paso de "orden-servicio"
+    if (current.id === 'orden-servicio') {
+      console.log(
+        '[Wizard] Ignorando submit parcial del paso "orden-servicio"'
+      );
+      goNext(); // o simplemente no avanzar, si deseas que quede fijo en este paso
+      return;
+    }
+
+    const done = await onStepSubmit?.(current);
     if (done?.success) {
       onSuccess?.(done.message || `Paso "${current.title}" completado.`);
-      goToStep(step + 1, 1);
+      goNext();
     } else if (done?.message) {
       onError?.(done.message);
     } else if (done === false) {
-      // compatibilidad con hooks antiguos
       onError?.('Ocurrió un error en este paso.');
     }
   };
 
-  const goPrev = () => {
-    goToStep(step - 1, -1);
-  };
-
-  // 🔹 Submit final con feedback
+  // Submit final
   const handleFinal = async () => {
     const res = await onFinalSubmit?.();
-
     if (res?.success) {
       onSuccess?.('Orden de servicio creada correctamente.');
     } else if (res?.message) {
@@ -103,7 +109,17 @@ export function StepWizardCore({
   });
 
   return (
-    <>
+    <StepWizardContext.Provider
+      value={{
+        step,
+        goPrev,
+        goNext,
+        goToStep,
+        handleNext,
+        handleFinal,
+        isAnimating,
+      }}
+    >
       <div
         style={{
           position: 'absolute',
@@ -176,6 +192,6 @@ export function StepWizardCore({
           </AnimatePresence>
         </div>
       </div>
-    </>
+    </StepWizardContext.Provider>
   );
 }

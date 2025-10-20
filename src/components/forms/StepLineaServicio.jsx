@@ -1,8 +1,9 @@
+// src/components/steps/StepLineaServicio.jsx
 import { useCallback, useMemo } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
+import { useStepWizard } from '../../context/StepWizardContext';
 import { SchemaForm } from './SchemaForm';
 
-// 🔹 Mantener `fields` fuera del componente evita recrearlo en cada render
 const fields = [
   {
     name: 'categoria',
@@ -62,31 +63,17 @@ const fields = [
 ];
 
 export function StepLineaServicio({ index }) {
-  const { orden, handleChangeLinea, handleAgregarLinea } =
+  const { goPrev } = useStepWizard();
+  const { orden, handleChangeLinea, handleAgregarLinea, handleRemoveLinea } =
     useOrdenServicioContext();
 
-  // ✅ Memorizar la línea actual para evitar cambiar su referencia en cada render
   const linea = useMemo(() => orden.lineas[index], [orden.lineas, index]);
-
-  if (!linea) {
-    return <p>⚠️ No hay datos para esta línea</p>;
-  }
 
   const gridTemplate = useMemo(
     () =>
-      linea.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-    [linea.categoria]
+      linea?.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+    [linea?.categoria]
   );
-
-  const handleAddLinea = useCallback(() => {
-    if (!linea.tipoTrabajo) {
-      alert(
-        '⚠️ Debes seleccionar un tipo de trabajo antes de agregar otra línea.'
-      );
-      return;
-    }
-    handleAgregarLinea();
-  }, [linea.tipoTrabajo, handleAgregarLinea]);
 
   const handleFieldChange = useCallback(
     (field, value) => {
@@ -95,26 +82,81 @@ export function StepLineaServicio({ index }) {
     [index, handleChangeLinea]
   );
 
-  console.log('🔁 Render StepLineaServicio index:', index);
+  const handleAddLinea = useCallback(() => {
+    if (!linea?.tipoTrabajo) {
+      alert(
+        '⚠️ Debes seleccionar un tipo de trabajo antes de agregar otra línea.'
+      );
+      return;
+    }
+    handleAgregarLinea();
+  }, [linea?.tipoTrabajo, handleAgregarLinea]);
+
+  const handleDeleteLinea = useCallback(async () => {
+    // 👈 Paso 1: retroceder antes de eliminar
+    goPrev();
+    await new Promise((r) => setTimeout(r, 650));
+
+    // 👇 Paso 2: eliminar la línea
+    handleRemoveLinea(index);
+  }, [index, goPrev, handleRemoveLinea]);
+
+  if (!linea) {
+    return (
+      <p style={{ color: '#888', textAlign: 'center', marginTop: '2rem' }}>
+        (Esta línea fue eliminada)
+      </p>
+    );
+  }
 
   return (
-    <div>
+    <div style={{ marginBottom: '2rem' }}>
       <SchemaForm
+        key={index}
         values={linea}
         onChange={handleFieldChange}
         fields={fields}
         showDescriptions={false}
-        readOnly={false}
         gridTemplateColumns={gridTemplate}
       />
 
-      <button
-        type="button"
-        onClick={handleAddLinea}
-        style={{ marginTop: '1rem' }}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '1.2rem',
+        }}
       >
-        ➕ Agregar nueva línea
-      </button>
+        <button
+          type="button"
+          onClick={handleAddLinea}
+          style={{
+            background: '#f0f0f0',
+            color: '#333',
+            border: '1px solid #ccc',
+            padding: '8px 14px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        >
+          ➕ Agregar nueva línea
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDeleteLinea}
+          style={{
+            background: '#ff4d4d',
+            color: '#fff',
+            border: 'none',
+            padding: '8px 14px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        >
+          🗑️ Eliminar línea
+        </button>
+      </div>
     </div>
   );
 }

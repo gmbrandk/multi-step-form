@@ -7,7 +7,6 @@ import {
 } from 'react';
 import { useOrdenServicioWizard } from '../hooks/useOrdenServicioWizard';
 
-// ✅ Contexto base
 const OrdenServicioContext = createContext(null);
 
 export function OrdenServicioProvider({
@@ -37,46 +36,25 @@ export function OrdenServicioProvider({
   const { ids, handleStepSubmit, handleFinalSubmit, resetClienteId } =
     useOrdenServicioWizard();
 
-  // 🧠 Captura la fuente del evento (archivo o función que lo llamó)
-  const captureSource = () => {
-    try {
-      const stack = new Error().stack?.split('\n') ?? [];
-      // Saltamos las primeras líneas internas del stack
-      const caller =
-        stack.find((line) => !line.includes('OrdenServicioProvider')) ??
-        stack[2] ??
-        'unknown';
-      return caller.trim();
-    } catch {
-      return 'unknown';
-    }
-  };
-
-  // 🪵 Logger mejorado con origen de evento
+  // 🧩 Logger centralizado para debugging
   const logEvent = useCallback((type, payload = null) => {
     const color =
       {
         LINEA_CHANGE: 'color:#1e90ff',
         LINEA_SUBTOTAL_UPDATED: 'color:#2ecc71',
         LINEA_ADDED: 'color:#f39c12',
+        LINEA_REMOVED: 'color:#e74c3c',
         ORDEN_CHANGE: 'color:#9b59b6',
-        RESET_CLIENTE: 'color:#e74c3c',
-        RESET_EQUIPO: 'color:#e67e22',
-        LINEA_ADD_START: 'color:#3498db',
+        RESET_CLIENTE: 'color:#9b59b6',
+        RESET_EQUIPO: 'color:#9b59b6',
       }[type] || 'color:gray';
 
-    const source = captureSource();
-
-    console.groupCollapsed(
-      `%c🧩 [OrdenServicioEvent] ${type}`,
-      color,
-      `📍 ${source}`
-    );
+    console.groupCollapsed(`%c🧩 [OrdenServicioEvent] ${type}`, color);
     if (payload) console.log('➡️ Payload:', payload);
     console.groupEnd();
   }, []);
 
-  // 🔹 Reset cliente
+  // 🔁 Reset cliente
   const resetClienteIdMemo = useCallback(() => {
     resetClienteId?.();
     setOrden((prev) => ({
@@ -94,7 +72,7 @@ export function OrdenServicioProvider({
     logEvent('RESET_CLIENTE');
   }, [resetClienteId, logEvent]);
 
-  // 🔹 Reset equipo
+  // 🔁 Reset equipo
   const resetEquipoId = useCallback(() => {
     setOrden((prev) => ({
       ...prev,
@@ -121,134 +99,84 @@ export function OrdenServicioProvider({
         typeof defaults.createLineaServicio === 'function'
           ? defaults.createLineaServicio()
           : {};
-
       const nueva = { _uid: crypto.randomUUID(), ...nuevaLinea };
-
-      const updated = {
-        ...prev,
-        lineas: [...prev.lineas, nueva],
-      };
-
+      const updated = { ...prev, lineas: [...prev.lineas, nueva] };
       logEvent('LINEA_ADDED', { totalLineas: updated.lineas.length });
       return updated;
     });
   }, [defaults, logEvent]);
 
-  // 🔄 Cambio en orden
+  // 🗑️ Eliminar línea (ya sin callback externo)
+  const handleRemoveLinea = useCallback(
+    async (idx) => {
+      setOrden((prev) => {
+        const nuevas = prev.lineas.filter((_, i) => i !== idx);
+        const total = nuevas.reduce(
+          (acc, l) => acc + (Number(l.subTotal) || 0),
+          0
+        );
+        const updated = { ...prev, lineas: nuevas, total };
+        logEvent('LINEA_REMOVED', {
+          removedAt: idx,
+          totalLineas: nuevas.length,
+        });
+        return updated;
+      });
+    },
+    [logEvent]
+  );
+
+  // 🔁 Cambios en una línea
+  const handleChangeLinea = useCallback(
+    (idx, field, value) => {
+      setOrden((prev) => {
+        const lineasPrevias = prev.lineas ?? [];
+        const lineaActual = lineasPrevias[idx];
+        if (!lineaActual) return prev;
+
+        const nuevaLinea = { ...lineaActual, [field]: value };
+
+        if (field === 'cantidad' || field === 'precioUnitario') {
+          const cantidad = Number(
+            field === 'cantidad' ? value : lineaActual.cantidad
+          );
+          const precio = Number(
+            field === 'precioUnitario' ? value : lineaActual.precioUnitario
+          );
+          nuevaLinea.subTotal = cantidad * precio;
+          logEvent('LINEA_SUBTOTAL_UPDATED', {
+            idx,
+            cantidad,
+            precio,
+            subTotal: nuevaLinea.subTotal,
+          });
+        }
+
+        const nuevasLineas = [...lineasPrevias];
+        nuevasLineas[idx] = nuevaLinea;
+        const total = nuevasLineas.reduce(
+          (acc, l) => acc + (Number(l.subTotal) || 0),
+          0
+        );
+
+        const nuevoOrden = { ...prev, lineas: nuevasLineas, total };
+        logEvent('LINEA_CHANGE', { idx, field, value, total });
+        return nuevoOrden;
+      });
+    },
+    [logEvent]
+  );
+
+  // 🧾 Cambios generales en la orden
   const handleChangeOrden = useCallback(
     (field, value) => {
-      setOrden((prev) => ({
-        ...prev,
-        [field]: {
-          ...prev[field],
-          ...value,
-        },
-      }));
+      setOrden((prev) => ({ ...prev, [field]: { ...prev[field], ...value } }));
       logEvent('ORDEN_CHANGE', { field, value });
     },
     [logEvent]
   );
 
-  // 🧩 Cambio en una línea del servicio (versión corregida y estable)
-  const handleChangeLinea = useCallback(
-    (idx, field, value, source = 'manual') => {
-      setOrden((prev) => {
-        const lineasPrevias = prev.lineas ?? [];
-        const lineaActual = lineasPrevias[idx];
-
-        // ⚠️ Si la línea no existe, no hacemos nada
-        if (!lineaActual) return prev;
-
-        // 🧮 Calculamos la nueva línea
-        const nuevaLinea = (() => {
-          if (lineaActual[field] === value) return lineaActual; // sin cambios
-          const actualizada = { ...lineaActual, [field]: value };
-
-          // 🔁 Recalcula subtotal solo si cambia cantidad o precio
-          if (field === 'cantidad' || field === 'precioUnitario') {
-            const cantidad =
-              field === 'cantidad'
-                ? Number(value) || 0
-                : Number(lineaActual.cantidad) || 0;
-            const precio =
-              field === 'precioUnitario'
-                ? Number(value) || 0
-                : Number(lineaActual.precioUnitario) || 0;
-            actualizada.subTotal = cantidad * precio;
-
-            logEvent('LINEA_SUBTOTAL_UPDATED', {
-              idx,
-              cantidad,
-              precio,
-              subTotal: actualizada.subTotal,
-            });
-          }
-
-          return actualizada;
-        })();
-
-        // Si no hay cambio real → evita renders innecesarios
-        if (nuevaLinea === lineaActual) return prev;
-
-        let nuevasLineas = [...lineasPrevias];
-        nuevasLineas[idx] = nuevaLinea;
-
-        // ➕ Si el usuario marca "crearLinea" y no existe la siguiente → agrega nueva
-        if (
-          field === 'crearLinea' &&
-          value === true &&
-          !lineasPrevias[idx + 1]
-        ) {
-          const nueva =
-            typeof defaults.createLineaServicio === 'function'
-              ? defaults.createLineaServicio()
-              : {};
-          nuevasLineas.push({ _uid: crypto.randomUUID(), ...nueva });
-          logEvent('LINEA_ADDED', { addedAt: idx + 1 });
-        }
-
-        // 🧹 Si desactiva "crearLinea" → limpiamos las líneas extra
-        if (field === 'crearLinea' && value === false) {
-          nuevasLineas = nuevasLineas.slice(0, idx + 1); // deja solo la línea actual
-          logEvent('LINEA_REMOVED_AFTER_UNCHECK', {
-            remaining: nuevasLineas.length,
-          });
-        }
-
-        // 💰 Recalcula total si corresponde
-        const total =
-          field === 'cantidad' ||
-          field === 'precioUnitario' ||
-          field === 'subTotal'
-            ? nuevasLineas.reduce(
-                (acc, l) => acc + (Number(l.subTotal) || 0),
-                0
-              )
-            : prev.total;
-
-        const nuevoOrden = {
-          ...prev,
-          lineas: nuevasLineas,
-          total,
-          crearLinea: field === 'crearLinea' ? value : prev.crearLinea,
-        };
-
-        logEvent('LINEA_CHANGE', {
-          idx,
-          field,
-          value,
-          source,
-          total,
-          lineasCount: nuevasLineas.length,
-        });
-
-        return nuevoOrden;
-      });
-    },
-    [defaults, logEvent]
-  );
-
-  // 📦 Valor del contexto
+  // 🧠 Context value memoizado
   const value = useMemo(
     () => ({
       orden,
@@ -256,6 +184,7 @@ export function OrdenServicioProvider({
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
+      handleRemoveLinea,
       ids,
       handleStepSubmit,
       handleFinalSubmit,
@@ -267,6 +196,7 @@ export function OrdenServicioProvider({
       handleChangeOrden,
       handleChangeLinea,
       handleAgregarLinea,
+      handleRemoveLinea,
       ids,
       handleStepSubmit,
       handleFinalSubmit,
@@ -282,13 +212,11 @@ export function OrdenServicioProvider({
   );
 }
 
-// 🧩 Hook para consumir el contexto
 export function useOrdenServicioContext() {
   const ctx = useContext(OrdenServicioContext);
-  if (!ctx) {
+  if (!ctx)
     throw new Error(
       'useOrdenServicioContext debe usarse dentro de OrdenServicioProvider'
     );
-  }
   return ctx;
 }
