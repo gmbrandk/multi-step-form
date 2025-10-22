@@ -157,7 +157,12 @@ export function StepWizardCore({
 
               <StepComponent {...stepProps} />
 
-              <div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
                 {step > 0 && (
                   <button
                     type="button"

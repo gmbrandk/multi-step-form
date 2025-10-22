@@ -1,17 +1,50 @@
+// components/StepOrdenServicio.jsx
+import { useState } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { createLineaServicio } from '../../domain/createLineaServicio';
 import { buildOrdenServicioFields } from '../../forms/ordenServicioFormSchema';
 import { useOrdenServicioForm } from '../../hooks/useOrdenServicioForm';
+import { useTiposTrabajo } from '../../hooks/useTiposTrabajo';
 import { SchemaForm } from './SchemaForm';
 
 export function StepOrdenServicio() {
   const { orden, handleChangeLinea, handleAgregarLinea } =
     useOrdenServicioContext();
-
+  const { tiposTrabajo, loading } = useTiposTrabajo();
   const linea = orden.lineas[0] || createLineaServicio();
-
   const form = useOrdenServicioForm({ linea, handleChangeLinea });
-  const fields = buildOrdenServicioFields({ linea });
+
+  const fields = buildOrdenServicioFields({ linea, tiposTrabajo });
+
+  const actionButtonStyle = {
+    width: '180px',
+    background: '#2980b9',
+    fontWeight: 'bold',
+    color: 'white',
+    border: '0 none',
+    borderRadius: '1px',
+    cursor: 'pointer',
+    padding: '10px',
+    margin: '10px 5px',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontFamily: 'montserrat, arial, verdana',
+    transition: 'box-shadow 0.2s ease-in-out',
+  };
+
+  const actionButtonHover = {
+    boxShadow: '0 0 0 2px white, 0 0 0 3px #2980b9',
+  };
+
+  const [isHover, setIsHover] = useState(false);
+
+  if (loading) {
+    return (
+      <p style={{ textAlign: 'center', marginTop: '2rem', color: '#888' }}>
+        Cargando tipos de trabajo...
+      </p>
+    );
+  }
 
   return (
     <div>
@@ -25,20 +58,19 @@ export function StepOrdenServicio() {
         showDescriptions={false}
       />
 
-      <div style={{ marginTop: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
         <button
           type="button"
           onClick={handleAgregarLinea}
+          onMouseEnter={() => setIsHover(true)}
+          onMouseLeave={() => setIsHover(false)}
           style={{
-            background: '#f0f0f0',
-            border: '1px solid #ccc',
-            padding: '6px 12px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
+            ...actionButtonStyle,
+            background: '#2980b9',
+            ...(isHover ? actionButtonHover : {}),
           }}
         >
-          + Agregar línea de servicio
+          ➕ Agregar línea de servicio
         </button>
       </div>
     </div>

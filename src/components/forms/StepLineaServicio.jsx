@@ -1,78 +1,20 @@
-// src/components/steps/StepLineaServicio.jsx
 import { useCallback, useMemo } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { useStepWizard } from '../../context/StepWizardContext';
+import { useTiposTrabajo } from '../../hooks/useTiposTrabajo'; // <-- nuevo hook dinámico
 import { SchemaForm } from './SchemaForm';
-
-const fields = [
-  {
-    name: 'categoria',
-    type: 'select',
-    label: { name: 'Categoría', className: 'sr-only' },
-    gridColumn: '1 / 4',
-    defaultValue: 'servicio',
-    options: [
-      { value: 'servicio', label: 'Servicios' },
-      { value: 'producto', label: 'Productos' },
-    ],
-  },
-  {
-    name: 'tipoTrabajo',
-    type: 'select',
-    label: { name: 'Tipo de Trabajo', className: 'sr-only' },
-    gridColumn: '1 / 4',
-    options: [
-      { value: '68a74570f2ab41918da7f937', label: 'Mantenimiento Preventivo' },
-      { value: '68afd6a2c19b8c72a13decb0', label: 'Diagnóstico' },
-      { value: '68dc9ac76162927555649baa', label: 'Formateo' },
-      { value: '68e335329e1eff2fcb38b733', label: 'Venta de Repuesto' },
-    ],
-    placeholder: 'Selecciona un tipo de trabajo...',
-  },
-  {
-    name: 'descripcion',
-    type: 'textarea',
-    label: { name: 'Descripción', className: 'sr-only' },
-    placeholder: 'Ej: Limpieza interna y chequeo de hardware',
-    gridColumn: '1 / 4',
-  },
-  {
-    name: 'cantidad',
-    type: 'number',
-    label: { name: 'Cantidad', className: 'sr-only' },
-    gridColumn: '1 / 2',
-    defaultValue: 1,
-    visibleWhen: (values) => values.categoria === 'producto',
-  },
-  {
-    name: 'precioUnitario',
-    type: 'number',
-    label: { name: 'Precio unitario', className: 'sr-only' },
-    gridColumn: (values) =>
-      values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
-    defaultValue: 0,
-  },
-  {
-    name: 'subTotal',
-    type: 'output',
-    label: { name: 'SubTotal', className: 'sr-only' },
-    gridColumn: (values) =>
-      values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
-    defaultValue: 0,
-  },
-];
 
 export function StepLineaServicio({ index }) {
   const { goPrev } = useStepWizard();
   const { orden, handleChangeLinea, handleAgregarLinea, handleRemoveLinea } =
     useOrdenServicioContext();
 
+  const { tiposTrabajo, loading } = useTiposTrabajo(); // ← cargamos los tipos dinámicos
   const linea = useMemo(() => orden.lineas[index], [orden.lineas, index]);
 
   const gridTemplate = useMemo(
-    () =>
-      linea?.categoria === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-    [linea?.categoria]
+    () => (linea?.tipo === 'servicio' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)'),
+    [linea?.tipo]
   );
 
   const handleFieldChange = useCallback(
@@ -93,11 +35,8 @@ export function StepLineaServicio({ index }) {
   }, [linea?.tipoTrabajo, handleAgregarLinea]);
 
   const handleDeleteLinea = useCallback(async () => {
-    // 👈 Paso 1: retroceder antes de eliminar
     goPrev();
     await new Promise((r) => setTimeout(r, 650));
-
-    // 👇 Paso 2: eliminar la línea
     handleRemoveLinea(index);
   }, [index, goPrev, handleRemoveLinea]);
 
@@ -108,6 +47,108 @@ export function StepLineaServicio({ index }) {
       </p>
     );
   }
+
+  if (loading) {
+    return (
+      <p style={{ textAlign: 'center', marginTop: '2rem', color: '#888' }}>
+        Cargando tipos de trabajo...
+      </p>
+    );
+  }
+
+  const tiposTrabajoSafe = Array.isArray(tiposTrabajo) ? tiposTrabajo : [];
+  console.log('🔍 Extraido de Backend:', tiposTrabajoSafe);
+
+  // Extraer tipos únicos (por ejemplo: servicio, producto)
+  const tiposUnicos = [
+    ...new Set(
+      tiposTrabajoSafe
+        .map((t) => t.tipo)
+        .filter((tipo) => typeof tipo === 'string' && tipo.trim() !== '')
+    ),
+  ].map((tipo) => ({
+    value: tipo,
+    label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
+  }));
+
+  console.log('🔍 Tipos únicos:', tiposUnicos);
+
+  // 🔧 Filtrar tipos de trabajo según el tipo actual
+  const trabajosFiltrados = tiposTrabajoSafe
+    .filter((t) => t.tipo === linea.tipo)
+    .map((t) => ({
+      value: t.value || t._id || t.id || '',
+      label: t.label || t.nombre || t.descripcion || '(Sin nombre)',
+    }));
+
+  console.log('🔍 Trabajos filtrados:', trabajosFiltrados);
+  // Campos dinámicos (tiposTrabajo viene del hook)
+  const fields = [
+    {
+      name: 'tipo',
+      type: 'select',
+      label: { name: 'Tipo', className: 'sr-only' },
+      gridColumn: '1 / 4',
+      placeholder: 'Selecciona un tipo...',
+      defaultValue: linea.tipo || '',
+      options: tiposUnicos,
+    },
+    {
+      name: 'tipoTrabajo',
+      type: 'select',
+      label: { name: 'Tipo de Trabajo', className: 'sr-only' },
+      gridColumn: '1 / 4',
+      placeholder: 'Selecciona un tipo de trabajo...',
+      defaultValue: linea.tipoTrabajo || '',
+      options: trabajosFiltrados,
+    },
+    {
+      name: 'descripcion',
+      type: 'textarea',
+      label: { name: 'Descripción', className: 'sr-only' },
+      placeholder: 'Ej: Limpieza interna y chequeo de hardware',
+      gridColumn: '1 / 4',
+    },
+    {
+      name: 'cantidad',
+      type: 'number',
+      label: { name: 'Cantidad', className: 'sr-only' },
+      gridColumn: '1 / 2',
+      defaultValue: 1,
+      visibleWhen: (values) => values.tipo === 'producto',
+    },
+    {
+      name: 'precioUnitario',
+      type: 'number',
+      label: { name: 'Precio unitario', className: 'sr-only' },
+      gridColumn: (values) => (values.tipo === 'servicio' ? '1 / 2' : '2 / 3'),
+      defaultValue: 0,
+    },
+    {
+      name: 'subTotal',
+      type: 'output',
+      label: { name: 'SubTotal', className: 'sr-only' },
+      gridColumn: (values) => (values.tipo === 'servicio' ? '2 / 3' : '3 / 4'),
+      defaultValue: 0,
+    },
+  ];
+
+  // === Estilos inline que imitan a .msform .action-button ===
+  const actionButtonStyle = {
+    width: '100px',
+    background: '#27ae60',
+    fontWeight: 'bold',
+    color: 'white',
+    border: '0 none',
+    borderRadius: '1px',
+    cursor: 'pointer',
+    padding: '10px',
+    margin: '10px 5px',
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontFamily: 'montserrat, arial, verdana',
+    transition: 'box-shadow 0.2s ease-in-out',
+  };
 
   return (
     <div style={{ marginBottom: '2rem' }}>
@@ -120,10 +161,11 @@ export function StepLineaServicio({ index }) {
         gridTemplateColumns={gridTemplate}
       />
 
+      {/* 👇 Botones de agregar/eliminar */}
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
           marginTop: '1.2rem',
         }}
       >
@@ -131,30 +173,22 @@ export function StepLineaServicio({ index }) {
           type="button"
           onClick={handleAddLinea}
           style={{
-            background: '#f0f0f0',
-            color: '#333',
-            border: '1px solid #ccc',
-            padding: '8px 14px',
-            borderRadius: '6px',
-            cursor: 'pointer',
+            ...actionButtonStyle,
+            background: '#2980b9',
           }}
         >
-          ➕ Agregar nueva línea
+          ➕ Agregar línea
         </button>
 
         <button
           type="button"
           onClick={handleDeleteLinea}
           style={{
-            background: '#ff4d4d',
-            color: '#fff',
-            border: 'none',
-            padding: '8px 14px',
-            borderRadius: '6px',
-            cursor: 'pointer',
+            ...actionButtonStyle,
+            background: '#c0392b',
           }}
         >
-          🗑️ Eliminar línea
+          🗑️ Eliminar
         </button>
       </div>
     </div>

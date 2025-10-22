@@ -1,33 +1,49 @@
-// forms/ordenServicioFormSchema.js
+export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
+  const tiposTrabajoSafe = Array.isArray(tiposTrabajo) ? tiposTrabajo : [];
+  console.log('🔍 Extraido de Backend:', tiposTrabajoSafe);
 
-export function buildOrdenServicioFields({ linea }) {
+  // Extraer tipos únicos (por ejemplo: servicio, producto)
+  const tiposUnicos = [
+    ...new Set(
+      tiposTrabajoSafe
+        .map((t) => t.tipo)
+        .filter((tipo) => typeof tipo === 'string' && tipo.trim() !== '')
+    ),
+  ].map((tipo) => ({
+    value: tipo,
+    label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
+  }));
+
+  console.log('🔍 Tipos únicos:', tiposUnicos);
+
+  // 🔧 Filtrar tipos de trabajo según el tipo actual
+  const trabajosFiltrados = tiposTrabajoSafe
+    .filter((t) => t.tipo === linea.tipo)
+    .map((t) => ({
+      value: t.value || t._id || t.id || '',
+      label: t.label || t.nombre || t.descripcion || '(Sin nombre)',
+    }));
+
+  console.log('🔍 Trabajos filtrados:', trabajosFiltrados);
+
   return [
     {
-      name: 'categoria',
+      name: 'tipo',
       type: 'select',
-      label: { name: 'Categoría', className: 'sr-only' },
+      label: { name: 'Tipo', className: 'sr-only' },
       gridColumn: '1 / 4',
-      defaultValue: 'servicio',
-      options: [
-        { value: 'servicio', label: 'Servicios' },
-        { value: 'producto', label: 'Productos' },
-      ],
+      placeholder: 'Selecciona un tipo...',
+      defaultValue: linea.tipo || '',
+      options: tiposUnicos,
     },
     {
       name: 'tipoTrabajo',
       type: 'select',
       label: { name: 'Tipo de Trabajo', className: 'sr-only' },
       gridColumn: '1 / 4',
-      defaultValue: '68afd6a2c19b8c72a13decb0',
-      options: [
-        {
-          value: '68a74570f2ab41918da7f937',
-          label: 'Mantenimiento Preventivo',
-        },
-        { value: '68afd6a2c19b8c72a13decb0', label: 'Diagnóstico' },
-        { value: '68dc9ac76162927555649baa', label: 'Formateo' },
-        { value: '68e335329e1eff2fcb38b733', label: 'Venta de Repuesto' },
-      ],
+      placeholder: 'Selecciona un tipo de trabajo...',
+      defaultValue: linea.tipoTrabajo || '',
+      options: trabajosFiltrados,
     },
     {
       name: 'descripcion',
@@ -50,23 +66,21 @@ export function buildOrdenServicioFields({ linea }) {
       placeholder: 'Ej: 1',
       gridColumn: '1 / 2',
       defaultValue: 1,
-      visibleWhen: (values) => values.categoria === 'producto',
+      visibleWhen: (values) => values.tipo === 'producto',
     },
     {
       name: 'precioUnitario',
       type: 'number',
       label: { name: 'Precio unitario', className: 'sr-only' },
       placeholder: 'Ej: 150.00',
-      gridColumn: (values) =>
-        values.categoria === 'servicio' ? '1 / 2' : '2 / 3',
+      gridColumn: (values) => (values.tipo === 'servicio' ? '1 / 2' : '2 / 3'),
       defaultValue: 0,
     },
     {
       name: 'subTotal',
       type: 'output',
       label: { name: 'SubTotal', className: 'sr-only' },
-      gridColumn: (values) =>
-        values.categoria === 'servicio' ? '2 / 3' : '3 / 4',
+      gridColumn: (values) => (values.tipo === 'servicio' ? '2 / 3' : '3 / 4'),
       defaultValue: 0,
     },
   ];

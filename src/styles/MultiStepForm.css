@@ -39,7 +39,7 @@ body {
 
 .progressbar {
   position: absolute;
-  top: 10px; /* siempre fija a 10px dentro de .form-wrapper */
+  top: 0px; /* siempre fija a 10px dentro de .form-wrapper */
   left: 0;
   right: 0;
   z-index: 10;
@@ -47,7 +47,7 @@ body {
 
 .msform {
   width: 400px;
-  margin: 50px auto;
+  margin: 10px auto;
   text-align: center;
   position: relative;
   min-height: 300px; /* ajusta al tamaño del step más alto */
@@ -90,6 +90,7 @@ body {
 /* Botones */
 .msform .action-button {
   width: 100px;
+  height: 54px;
   background: #27ae60;
   font-weight: bold;
   color: white;
