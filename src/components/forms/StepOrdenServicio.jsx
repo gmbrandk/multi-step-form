@@ -1,5 +1,4 @@
-// components/StepOrdenServicio.jsx
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { createLineaServicio } from '../../domain/createLineaServicio';
 import { buildOrdenServicioFields } from '../../forms/ordenServicioFormSchema';
@@ -10,11 +9,27 @@ import { SchemaForm } from './SchemaForm';
 export function StepOrdenServicio() {
   const { orden, handleChangeLinea, handleAgregarLinea } =
     useOrdenServicioContext();
-  const { tiposTrabajo, loading } = useTiposTrabajo();
+  const { tiposTrabajo, loading, error, refetch } = useTiposTrabajo();
   const linea = orden.lineas[0] || createLineaServicio();
   const form = useOrdenServicioForm({ linea, handleChangeLinea });
 
-  const fields = buildOrdenServicioFields({ linea, tiposTrabajo });
+  // ===============================
+  // ⚙️ Campos dinámicos con fallback
+  // ===============================
+  const fields = useMemo(
+    () =>
+      buildOrdenServicioFields({
+        linea,
+        tiposTrabajo,
+        isFallback: loading || error,
+        fallbackMessage: error
+          ? '⚠️ No se pudo conectar con el servidor'
+          : '⏳ Cargando tipos de trabajo...',
+      }),
+    [linea, tiposTrabajo, loading, error]
+  );
+
+  const [isHover, setIsHover] = useState(false);
 
   const actionButtonStyle = {
     width: '180px',
@@ -36,43 +51,43 @@ export function StepOrdenServicio() {
     boxShadow: '0 0 0 2px white, 0 0 0 3px #2980b9',
   };
 
-  const [isHover, setIsHover] = useState(false);
-
-  if (loading) {
-    return (
-      <p style={{ textAlign: 'center', marginTop: '2rem', color: '#888' }}>
-        Cargando tipos de trabajo...
-      </p>
-    );
-  }
+  const isFallback = loading || error;
 
   return (
     <div>
       <SchemaForm
         values={linea}
-        onChange={(field, value) => {
-          form.handleChangeLinea(0, field, value);
-        }}
+        onChange={(field, value) => form.handleChangeLinea(0, field, value)}
         fields={fields}
         gridTemplateColumns={form.gridTemplate}
         showDescriptions={false}
+        isFallback={isFallback}
+        fallbackMessage={
+          error
+            ? '⚠️ Error de conexión con el backend'
+            : '⏳ Cargando datos del formulario...'
+        }
+        onRetry={refetch} // 👈 agregado
       />
 
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <button
-          type="button"
-          onClick={handleAgregarLinea}
-          onMouseEnter={() => setIsHover(true)}
-          onMouseLeave={() => setIsHover(false)}
-          style={{
-            ...actionButtonStyle,
-            background: '#2980b9',
-            ...(isHover ? actionButtonHover : {}),
-          }}
-        >
-          ➕ Agregar línea de servicio
-        </button>
-      </div>
+      {/* 👇 Botón se oculta si está en modo fallback */}
+      {!isFallback && (
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <button
+            type="button"
+            onClick={handleAgregarLinea}
+            onMouseEnter={() => setIsHover(true)}
+            onMouseLeave={() => setIsHover(false)}
+            style={{
+              ...actionButtonStyle,
+              background: '#2980b9',
+              ...(isHover ? actionButtonHover : {}),
+            }}
+          >
+            ➕ Agregar línea de servicio
+          </button>
+        </div>
+      )}
     </div>
   );
 }

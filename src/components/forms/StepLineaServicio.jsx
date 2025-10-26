@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { useStepWizard } from '../../context/StepWizardContext';
-import { useTiposTrabajo } from '../../hooks/useTiposTrabajo'; // <-- nuevo hook dinámico
+import { buildOrdenServicioFields } from '../../forms/ordenServicioFormSchema';
+import { useTiposTrabajo } from '../../hooks/useTiposTrabajo';
 import { SchemaForm } from './SchemaForm';
 
 export function StepLineaServicio({ index }) {
@@ -9,7 +10,7 @@ export function StepLineaServicio({ index }) {
   const { orden, handleChangeLinea, handleAgregarLinea, handleRemoveLinea } =
     useOrdenServicioContext();
 
-  const { tiposTrabajo, loading } = useTiposTrabajo(); // ← cargamos los tipos dinámicos
+  const { tiposTrabajo, loading, error, refetch } = useTiposTrabajo();
   const linea = useMemo(() => orden.lineas[index], [orden.lineas, index]);
 
   const gridTemplate = useMemo(
@@ -18,9 +19,7 @@ export function StepLineaServicio({ index }) {
   );
 
   const handleFieldChange = useCallback(
-    (field, value) => {
-      handleChangeLinea(index, field, value);
-    },
+    (field, value) => handleChangeLinea(index, field, value),
     [index, handleChangeLinea]
   );
 
@@ -48,92 +47,29 @@ export function StepLineaServicio({ index }) {
     );
   }
 
-  if (loading) {
-    return (
-      <p style={{ textAlign: 'center', marginTop: '2rem', color: '#888' }}>
-        Cargando tipos de trabajo...
-      </p>
-    );
-  }
+  // ===============================
+  // ⚙️ Fallback profesional (loading/error)
+  // ===============================
+  const isFallback = loading || error;
+  const fallbackMessage = error
+    ? '⚠️ Error de conexión con el backend'
+    : '⏳ Cargando tipos de trabajo...';
 
-  const tiposTrabajoSafe = Array.isArray(tiposTrabajo) ? tiposTrabajo : [];
-  console.log('🔍 Extraido de Backend:', tiposTrabajoSafe);
+  // ===============================
+  // 🧩 Campos dinámicos
+  // ===============================
+  const fields = useMemo(
+    () =>
+      buildOrdenServicioFields({
+        linea,
+        tiposTrabajo,
+        isFallback,
+        fallbackMessage,
+      }),
+    [linea, tiposTrabajo, isFallback, fallbackMessage]
+  );
 
-  // Extraer tipos únicos (por ejemplo: servicio, producto)
-  const tiposUnicos = [
-    ...new Set(
-      tiposTrabajoSafe
-        .map((t) => t.tipo)
-        .filter((tipo) => typeof tipo === 'string' && tipo.trim() !== '')
-    ),
-  ].map((tipo) => ({
-    value: tipo,
-    label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
-  }));
-
-  console.log('🔍 Tipos únicos:', tiposUnicos);
-
-  // 🔧 Filtrar tipos de trabajo según el tipo actual
-  const trabajosFiltrados = tiposTrabajoSafe
-    .filter((t) => t.tipo === linea.tipo)
-    .map((t) => ({
-      value: t.value || t._id || t.id || '',
-      label: t.label || t.nombre || t.descripcion || '(Sin nombre)',
-    }));
-
-  console.log('🔍 Trabajos filtrados:', trabajosFiltrados);
-  // Campos dinámicos (tiposTrabajo viene del hook)
-  const fields = [
-    {
-      name: 'tipo',
-      type: 'select',
-      label: { name: 'Tipo', className: 'sr-only' },
-      gridColumn: '1 / 4',
-      placeholder: 'Selecciona un tipo...',
-      defaultValue: linea.tipo || '',
-      options: tiposUnicos,
-    },
-    {
-      name: 'tipoTrabajo',
-      type: 'select',
-      label: { name: 'Tipo de Trabajo', className: 'sr-only' },
-      gridColumn: '1 / 4',
-      placeholder: 'Selecciona un tipo de trabajo...',
-      defaultValue: linea.tipoTrabajo || '',
-      options: trabajosFiltrados,
-    },
-    {
-      name: 'descripcion',
-      type: 'textarea',
-      label: { name: 'Descripción', className: 'sr-only' },
-      placeholder: 'Ej: Limpieza interna y chequeo de hardware',
-      gridColumn: '1 / 4',
-    },
-    {
-      name: 'cantidad',
-      type: 'number',
-      label: { name: 'Cantidad', className: 'sr-only' },
-      gridColumn: '1 / 2',
-      defaultValue: 1,
-      visibleWhen: (values) => values.tipo === 'producto',
-    },
-    {
-      name: 'precioUnitario',
-      type: 'number',
-      label: { name: 'Precio unitario', className: 'sr-only' },
-      gridColumn: (values) => (values.tipo === 'servicio' ? '1 / 2' : '2 / 3'),
-      defaultValue: 0,
-    },
-    {
-      name: 'subTotal',
-      type: 'output',
-      label: { name: 'SubTotal', className: 'sr-only' },
-      gridColumn: (values) => (values.tipo === 'servicio' ? '2 / 3' : '3 / 4'),
-      defaultValue: 0,
-    },
-  ];
-
-  // === Estilos inline que imitan a .msform .action-button ===
+  // === Botones ===
   const actionButtonStyle = {
     width: '100px',
     background: '#27ae60',
@@ -151,7 +87,7 @@ export function StepLineaServicio({ index }) {
   };
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
+    <div>
       <SchemaForm
         key={index}
         values={linea}
@@ -159,38 +95,42 @@ export function StepLineaServicio({ index }) {
         fields={fields}
         showDescriptions={false}
         gridTemplateColumns={gridTemplate}
+        isFallback={isFallback}
+        fallbackMessage={fallbackMessage}
+        onRetry={refetch}
       />
 
-      {/* 👇 Botones de agregar/eliminar */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '1.2rem',
-        }}
-      >
-        <button
-          type="button"
-          onClick={handleAddLinea}
+      {/* 👇 Botones de agregar/eliminar (ocultos durante fallback) */}
+      {!isFallback && (
+        <div
           style={{
-            ...actionButtonStyle,
-            background: '#2980b9',
+            display: 'flex',
+            justifyContent: 'center',
           }}
         >
-          ➕ Agregar línea
-        </button>
+          <button
+            type="button"
+            onClick={handleAddLinea}
+            style={{
+              ...actionButtonStyle,
+              background: '#2980b9',
+            }}
+          >
+            ➕ Agregar línea
+          </button>
 
-        <button
-          type="button"
-          onClick={handleDeleteLinea}
-          style={{
-            ...actionButtonStyle,
-            background: '#c0392b',
-          }}
-        >
-          🗑️ Eliminar
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={handleDeleteLinea}
+            style={{
+              ...actionButtonStyle,
+              background: '#c0392b',
+            }}
+          >
+            🗑️ Eliminar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

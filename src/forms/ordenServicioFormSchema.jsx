@@ -1,30 +1,17 @@
 export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
-  const tiposTrabajoSafe = Array.isArray(tiposTrabajo) ? tiposTrabajo : [];
-  console.log('🔍 Extraido de Backend:', tiposTrabajoSafe);
+  const tiposUnicos = [...new Set(tiposTrabajo.map((t) => t.tipo))].map(
+    (tipo) => ({
+      value: tipo,
+      label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
+    })
+  );
 
-  // Extraer tipos únicos (por ejemplo: servicio, producto)
-  const tiposUnicos = [
-    ...new Set(
-      tiposTrabajoSafe
-        .map((t) => t.tipo)
-        .filter((tipo) => typeof tipo === 'string' && tipo.trim() !== '')
-    ),
-  ].map((tipo) => ({
-    value: tipo,
-    label: tipo.charAt(0).toUpperCase() + tipo.slice(1),
-  }));
-
-  console.log('🔍 Tipos únicos:', tiposUnicos);
-
-  // 🔧 Filtrar tipos de trabajo según el tipo actual
-  const trabajosFiltrados = tiposTrabajoSafe
+  const trabajosFiltrados = tiposTrabajo
     .filter((t) => t.tipo === linea.tipo)
     .map((t) => ({
-      value: t.value || t._id || t.id || '',
-      label: t.label || t.nombre || t.descripcion || '(Sin nombre)',
+      value: t.value,
+      label: t.label,
     }));
-
-  console.log('🔍 Trabajos filtrados:', trabajosFiltrados);
 
   return [
     {
@@ -35,6 +22,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       placeholder: 'Selecciona un tipo...',
       defaultValue: linea.tipo || '',
       options: tiposUnicos,
+      localEditable: false, // ⚠️ Depende de datos externos
     },
     {
       name: 'tipoTrabajo',
@@ -44,6 +32,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       placeholder: 'Selecciona un tipo de trabajo...',
       defaultValue: linea.tipoTrabajo || '',
       options: trabajosFiltrados,
+      localEditable: false, // ⚠️ Depende de datos externos
     },
     {
       name: 'descripcion',
@@ -51,6 +40,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       label: { name: 'Descripción', className: 'sr-only' },
       placeholder: 'Ej: Limpieza interna y chequeo de hardware',
       gridColumn: '1 / 4',
+      localEditable: true, // ✅ editable siempre
     },
     {
       name: 'observaciones',
@@ -58,6 +48,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       label: { name: 'Observaciones', className: 'sr-only' },
       placeholder: 'Ej: Equipo con carcasa rallada',
       gridColumn: '1 / 4',
+      localEditable: true,
     },
     {
       name: 'cantidad',
@@ -67,6 +58,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       gridColumn: '1 / 2',
       defaultValue: 1,
       visibleWhen: (values) => values.tipo === 'producto',
+      localEditable: true,
     },
     {
       name: 'precioUnitario',
@@ -75,6 +67,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       placeholder: 'Ej: 150.00',
       gridColumn: (values) => (values.tipo === 'servicio' ? '1 / 2' : '2 / 3'),
       defaultValue: 0,
+      localEditable: true,
     },
     {
       name: 'subTotal',
@@ -82,6 +75,7 @@ export function buildOrdenServicioFields({ linea = {}, tiposTrabajo = [] }) {
       label: { name: 'SubTotal', className: 'sr-only' },
       gridColumn: (values) => (values.tipo === 'servicio' ? '2 / 3' : '3 / 4'),
       defaultValue: 0,
+      localEditable: true,
     },
   ];
 }
