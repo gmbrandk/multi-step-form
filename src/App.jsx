@@ -51,7 +51,7 @@ export default function App() {
   // Verificar sesión al montar
   useEffect(() => {
     const url = 'http://localhost:5000/api/auth/me';
-    console.log('[App] Verificando sesión con backend:', url);
+    // console.log('[App] Verificando sesión con backend:', url);
 
     fetch(url, { credentials: 'include' })
       .then(async (res) => {
@@ -61,7 +61,7 @@ export default function App() {
 
         if (data.success && data.usuario) {
           setUsuario(data.usuario);
-          console.log('[App] Usuario seteado en estado:', data.usuario);
+          // console.log('[App] Usuario seteado en estado:', data.usuario);
         } else {
           console.log('[App] No hay usuario activo en sesión');
         }

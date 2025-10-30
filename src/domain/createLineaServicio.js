@@ -1,13 +1,12 @@
-// useLineaServicio.js
-export function createLineaServicio(overrides = {}) {
+export function createLineaServicio() {
   return {
-    tipo: 'servicio', // default
-    tipoTrabajo: '68afd6a2c19b8c72a13decb0',
-    nombreTrabajo: '',
-    cantidad: 1, // mínimo 1
+    _uid: crypto.randomUUID(),
+    tipo: 'servicio', // 👈 Valor por defecto
+    tipoTrabajo: '',
+    descripcion: '',
+    observaciones: '',
+    cantidad: 1,
     precioUnitario: 0,
     subTotal: 0,
-    crearLinea: false,
-    ...overrides,
   };
 }

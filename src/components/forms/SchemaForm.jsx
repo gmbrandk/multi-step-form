@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { AutocompleteField } from '../fields/AutocompleteField';
 import { TelefonoField } from '../fields/TelefonoFIeld';
 import { Input } from '../InputBase';
@@ -10,46 +10,183 @@ export const SchemaForm = memo(function SchemaForm({
   gridTemplateColumns = 'repeat(3, 1fr)',
   showDescriptions = true,
   readOnly = false,
-  isFallback = false, // 👈 estado global de carga / error
-  fallbackMessage = '⚙️ Cargando datos...', // 👈 mensaje configurable
-  onRetry, // 👈 (opcional) para reintentar carga
+  isFallback = false,
+  fallbackMessage = '⚙️ Cargando datos...',
+  onRetry,
+  error = false,
 }) {
-  if (!fields.length) return null;
+  // ====================================================
+  // 🧱 Seguridad de datos
+  // ====================================================
+  const safeValues = useMemo(
+    () => (values && typeof values === 'object' ? values : {}),
+    [values]
+  );
+  const safeFields = Array.isArray(fields) ? fields : [];
 
   // ====================================================
-  // Utilidades internas
+  // ⏳ Control visual entre shimmer → error panel
   // ====================================================
-  const resolveValue = (field, values) => {
-    const v = values[field.name];
-    const isEmpty = v === undefined || v === null || v === '';
-    return isEmpty ? field.defaultValue ?? '' : v;
-  };
+  const [showErrorPanel, setShowErrorPanel] = useState(false);
 
-  const updateValue = (name, newValue) => {
-    if (typeof onChange === 'function') {
-      const field = fields.find((f) => f.name === name);
-      const editable = !isFallback || field?.localEditable;
-      if (editable) onChange(name, newValue);
+  // ====================================================
+  // 🚫 Error de conexión o servidor caído
+  // ====================================================
+  useEffect(() => {
+    let timer;
+    // Si estamos cargando o hay error, esperamos antes de mostrar el panel
+    if (isFallback || error) {
+      timer = setTimeout(() => {
+        if (error) setShowErrorPanel(true);
+      }, 1500); // ⏱ espera 2.5 segundos antes de mostrar el error
+    } else {
+      setShowErrorPanel(false);
     }
-  };
-
-  const attachRef = (field, idx) => {
-    return (el) => {
-      if (typeof field.inputRef === 'function') {
-        field.inputRef(el);
-      } else if (field.inputRef && 'current' in field.inputRef) {
-        field.inputRef.current = el;
-      }
-    };
-  };
+    return () => clearTimeout(timer);
+  }, [error, isFallback]);
 
   // ====================================================
-  // Estilos shimmer (modo fallback)
+  // 🚫 Error de conexión o servidor caído
+  // ====================================================
+  if (showErrorPanel && error) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '260px',
+          textAlign: 'center',
+          color: '#555',
+          background: '#fafafa',
+          border: '1px solid #eee',
+          borderRadius: '8px',
+          padding: '2rem',
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '2.5rem',
+            marginBottom: '1rem',
+            animation: 'pulse 1.5s infinite',
+          }}
+        >
+          📡
+        </div>
+        <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+          {fallbackMessage || 'No se pudo conectar con el servidor'}
+        </p>
+        <small style={{ color: '#999' }}>
+          Verifica tu conexión a internet o intenta más tarde.
+        </small>
+
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            style={{
+              marginTop: '1.5rem',
+              padding: '10px 18px',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+              borderRadius: '4px',
+              background: '#2980b9',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Reintentar 🔄
+          </button>
+        )}
+
+        <style>
+          {`
+            @keyframes pulse {
+              0% { opacity: 0.6; transform: scale(1); }
+              50% { opacity: 1; transform: scale(1.1); }
+              100% { opacity: 0.6; transform: scale(1); }
+            }
+          `}
+        </style>
+      </div>
+    );
+  }
+  // ====================================================
+  // 🕐 Fallback total (sin campos aún → shimmer global)
+  // ====================================================
+  if (isFallback && !safeFields.length) {
+    return (
+      <>
+        <style>
+          {`
+            @keyframes shimmer {
+              0% { background-position: -200% 0; }
+              100% { background-position: 200% 0; }
+            }
+          `}
+        </style>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns,
+            gap: '10px 8px',
+            padding: '1rem',
+          }}
+        >
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+            >
+              <div
+                style={{
+                  width: '40%',
+                  height: '12px',
+                  borderRadius: '3px',
+                  background:
+                    'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 1.3s ease-in-out infinite',
+                }}
+              />
+              <div
+                style={{
+                  height: '38px',
+                  borderRadius: '4px',
+                  background:
+                    'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 1.3s ease-in-out infinite',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  // ====================================================
+  // 🚫 Sin campos
+  // ====================================================
+  if (!safeFields.length) {
+    return (
+      <p style={{ color: '#999', textAlign: 'center', marginTop: '1rem' }}>
+        (Sin campos para mostrar)
+      </p>
+    );
+  }
+
+  // ====================================================
+  // ✨ Estilos shimmer (modo carga campo a campo)
   // ====================================================
   const shimmerStyle = {
     background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
     backgroundSize: '200% 100%',
-    animation: 'shimmer 1.2s ease-in-out infinite',
+    animation: 'shimmer 1.3s ease-in-out infinite',
   };
 
   const shimmerKeyframes = `
@@ -60,7 +197,31 @@ export const SchemaForm = memo(function SchemaForm({
   `;
 
   // ====================================================
-  // Render principal
+  // 🧠 Funciones auxiliares
+  // ====================================================
+  const resolveValue = (field, valuesObj) => {
+    if (!field || !valuesObj) return field?.defaultValue ?? '';
+    const v = valuesObj[field.name];
+    const isEmpty = v === undefined || v === null || v === '';
+    return isEmpty ? field.defaultValue ?? '' : v;
+  };
+
+  const updateValue = (name, newValue) => {
+    if (typeof onChange === 'function') {
+      const field = safeFields.find((f) => f.name === name);
+      const editable = !isFallback || field?.localEditable;
+      if (editable) onChange(name, newValue);
+    }
+  };
+
+  const attachRef = (field, idx) => (el) => {
+    if (typeof field.inputRef === 'function') field.inputRef(el);
+    else if (field.inputRef && 'current' in field.inputRef)
+      field.inputRef.current = el;
+  };
+
+  // ====================================================
+  // 🧾 Render principal
   // ====================================================
   return (
     <>
@@ -70,249 +231,228 @@ export const SchemaForm = memo(function SchemaForm({
           display: 'grid',
           gridTemplateColumns,
           columnGap: '8px',
+          rowGap: '10px',
         }}
       >
-        {fields.map((field, idx) => {
+        {safeFields.map((field, idx) => {
+          if (!field) return null;
           const { name, type, label, className } = field;
 
-          if (field.visibleWhen && !field.visibleWhen(values)) return null;
+          // visibilidad condicional
+          if (field.visibleWhen && !field.visibleWhen(safeValues)) return null;
 
           const column =
             typeof field.gridColumn === 'function'
-              ? field.gridColumn(values)
+              ? field.gridColumn(safeValues)
               : field.gridColumn;
 
-          const value = resolveValue(field, values);
+          const value = resolveValue(field, safeValues);
+          const disabled =
+            readOnly || field.disabled || (isFallback && !field.localEditable);
 
-          // 🔒 Durante fallback deshabilitamos TODO (sin excepción)
-          const disabled = readOnly || field.disabled || isFallback;
-
-          // ⚡ Estilo shimmer visual
-          const commonFallback = isFallback
-            ? {
-                ...shimmerStyle,
-                borderRadius: '4px',
-                color: '#999',
-                cursor: 'not-allowed',
-              }
-            : {};
-
-          // ====================================================
-          // Render por tipo de campo
-          // ====================================================
-
-          // ✅ Autocomplete
-          if (type === 'autocomplete') {
-            return (
-              <AutocompleteField
-                key={name}
-                value={value}
-                onChange={(v) => updateValue(name, v)}
-                {...field.props}
-                gridColumn={column}
-                disabled={disabled}
-              />
-            );
-          }
-
-          // ✅ Custom render
-          if (type === 'custom') {
-            return (
-              <div key={name} style={{ gridColumn: column }}>
-                {field.render({
-                  value,
-                  onChange: (v) => updateValue(name, v),
-                  values,
-                  updateValue,
-                  isFallback,
-                })}
-              </div>
-            );
-          }
-
-          // ✅ Teléfono
-          if (type === 'telefono') {
-            return (
-              <TelefonoField
-                key={name}
-                value={value}
-                onChange={(v) => updateValue(name, v)}
-                {...field.props}
-                gridColumn={column}
-                disabled={disabled}
-              />
-            );
-          }
-
-          // ✅ Checkbox
-          if (type === 'checkbox') {
-            return (
+          const shimmerBlock =
+            isFallback && !field.localEditable ? (
               <div
-                key={name}
-                className={className}
                 style={{
-                  gridColumn: column || '1 / -1',
-                  justifySelf: 'center',
-                  alignSelf: 'center',
+                  height: type === 'textarea' ? '60px' : '38px',
+                  borderRadius: '4px',
+                  ...shimmerStyle,
                 }}
-              >
-                <label htmlFor={name} className={label?.className}>
-                  <input
-                    id={name}
-                    name={name}
-                    type="checkbox"
-                    checked={!!value}
-                    disabled={disabled}
-                    onChange={(e) => updateValue(name, e.target.checked)}
-                    ref={attachRef(field, idx)}
-                    className="input-field"
-                  />
-                  <span>{label?.name || label}</span>
-                </label>
-              </div>
-            );
-          }
+              />
+            ) : null;
 
-          // ✅ Select
-          if (type === 'select') {
-            return (
-              <div
-                key={name}
-                className={`input-container ${
-                  disabled ? 'input-disabled' : ''
-                } ${isFallback && !field.localEditable ? 'loading' : ''}`}
-                style={{ gridColumn: column }}
+          const renderLabel = () =>
+            label ? (
+              <label
+                htmlFor={name}
+                className={typeof label === 'object' ? label.className : ''}
               >
-                <label htmlFor={name} className={label?.className}>
-                  {label?.name || label}
-                </label>
-                {isFallback && !field.localEditable ? (
-                  <div style={{ height: '38px', ...commonFallback }} />
-                ) : (
-                  <select
-                    id={name}
-                    name={name}
-                    className="input-field"
-                    value={value}
-                    disabled={disabled}
-                    onChange={(e) => updateValue(name, e.target.value)}
-                    ref={attachRef(field, idx)}
-                  >
-                    <option value="">
-                      {field.placeholder || 'Selecciona...'}
-                    </option>
-                    {field.options?.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                {typeof label === 'object' ? label.name : label}
+              </label>
+            ) : null;
+
+          switch (type) {
+            case 'autocomplete':
+              return (
+                <AutocompleteField
+                  key={name}
+                  value={value}
+                  onChange={(v) => updateValue(name, v)}
+                  {...field.props}
+                  gridColumn={column}
+                  disabled={disabled}
+                />
+              );
+
+            case 'telefono':
+              return (
+                <TelefonoField
+                  key={name}
+                  value={value}
+                  onChange={(v) => updateValue(name, v)}
+                  {...field.props}
+                  gridColumn={column}
+                  disabled={disabled}
+                />
+              );
+
+            case 'select':
+              return (
+                <div key={name} style={{ gridColumn: column }}>
+                  {renderLabel()}
+                  {shimmerBlock ? (
+                    shimmerBlock
+                  ) : (
+                    <select
+                      id={name}
+                      name={name}
+                      value={value}
+                      disabled={disabled}
+                      onChange={(e) => updateValue(name, e.target.value)}
+                      className="input-field"
+                    >
+                      <option value="">
+                        {field.placeholder || 'Selecciona...'}
                       </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            );
-          }
+                      {field.options?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              );
 
-          // ✅ Textarea
-          if (type === 'textarea') {
-            return (
-              <div
-                key={name}
-                className={`input-container ${
-                  disabled ? 'input-disabled' : ''
-                } ${isFallback && !field.localEditable ? 'loading' : ''}`}
-                style={{ gridColumn: column }}
-              >
-                <label htmlFor={name} className={label?.className}>
-                  {label?.name || label}
-                </label>
-                {isFallback && !field.localEditable ? (
-                  <div
-                    className="input-field"
-                    style={{ height: '60px', ...commonFallback }}
-                  />
-                ) : (
-                  <textarea
-                    id={name}
-                    name={name}
-                    className="input-field"
-                    placeholder={field.placeholder}
-                    value={value}
-                    disabled={disabled}
-                    onChange={(e) => updateValue(name, e.target.value)}
-                    style={{ width: '100%', minHeight: '60px' }}
-                    ref={attachRef(field, idx)}
-                  />
-                )}
-              </div>
-            );
-          }
+            case 'textarea':
+              return (
+                <div key={name} style={{ gridColumn: column }}>
+                  {renderLabel()}
+                  {shimmerBlock ? (
+                    shimmerBlock
+                  ) : (
+                    <textarea
+                      id={name}
+                      name={name}
+                      value={value}
+                      disabled={disabled}
+                      placeholder={field.placeholder}
+                      onChange={(e) => updateValue(name, e.target.value)}
+                      style={{ width: '100%', minHeight: '60px' }}
+                    />
+                  )}
+                </div>
+              );
 
-          // ✅ Output
-          if (type === 'output') {
-            return (
-              <div
-                key={name}
-                className={`input-container ${
-                  disabled ? 'input-disabled' : ''
-                }`}
-                style={{ gridColumn: column }}
-              >
-                <label htmlFor={name} className={label?.className}>
-                  {label?.name || label}
-                </label>
-                <output
-                  id={name}
-                  name={name}
-                  className="input-field"
+            case 'checkbox':
+              return (
+                <div
+                  key={name}
+                  className={className}
                   style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    fontWeight: 'bold',
-                    background: '#eee',
+                    gridColumn: column || '1 / -1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
                   }}
                 >
-                  {value}
-                </output>
-              </div>
-            );
-          }
+                  {isFallback && !field.localEditable ? (
+                    <div
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '3px',
+                        ...shimmerStyle,
+                      }}
+                    />
+                  ) : (
+                    <input
+                      id={name}
+                      name={name}
+                      type="checkbox"
+                      checked={!!value}
+                      disabled={disabled}
+                      onChange={(e) => updateValue(name, e.target.checked)}
+                      ref={attachRef(field, idx)}
+                      className="input-field"
+                      style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+                    />
+                  )}
+                  {renderLabel()}
+                </div>
+              );
 
-          // ✅ Input estándar
-          return (
-            <div
-              key={name}
-              className={`input-container ${disabled ? 'input-disabled' : ''} ${
-                isFallback && !field.localEditable ? 'loading' : ''
-              }`}
-              style={{ gridColumn: column }}
-            >
-              <Input
-                id={name}
-                name={name}
-                type={type || 'text'}
-                label={label?.name || label}
-                value={value}
-                placeholder={isFallback ? fallbackMessage : field.placeholder}
-                disabled={disabled}
-                onChange={(e) => updateValue(name, e.target.value)}
-                ref={attachRef(field, idx)}
-                className="input-field"
-              />
-            </div>
-          );
+            case 'output': {
+              // Si estamos en modo shimmer, renderizamos el bloque animado
+              if (shimmerBlock) {
+                return (
+                  <div key={name} style={{ gridColumn: column || '1 / -1' }}>
+                    {renderLabel()}
+                    {shimmerBlock}
+                  </div>
+                );
+              }
+
+              // Fallback: shimmer genérico si no hay shimmerBlock definido
+              if (isFallback) {
+                return (
+                  <div
+                    key={name}
+                    className="loading"
+                    style={{
+                      gridColumn: column || '1 / -1',
+                      height: '2.5rem',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    {renderLabel()}
+                  </div>
+                );
+              }
+
+              // Render normal del output
+              return (
+                <div key={name} style={{ gridColumn: column || '1 / -1' }}>
+                  {renderLabel()}
+                  <output
+                    className="input-field"
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      background: '#eee',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {value}
+                  </output>
+                </div>
+              );
+            }
+
+            default:
+              return (
+                <div key={name} style={{ gridColumn: column }}>
+                  {renderLabel()}
+                  {shimmerBlock ? (
+                    shimmerBlock
+                  ) : (
+                    <Input
+                      id={name}
+                      name={name}
+                      type={type || 'text'}
+                      value={value}
+                      disabled={disabled}
+                      placeholder={field.placeholder}
+                      onChange={(e) => updateValue(name, e.target.value)}
+                      ref={attachRef(field, idx)}
+                    />
+                  )}
+                </div>
+              );
+          }
         })}
       </div>
-
-      {/* 👇 Área opcional para fallback con retry */}
-      {isFallback && onRetry && (
-        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-          <p style={{ color: '#999' }}>{fallbackMessage}</p>
-          <button onClick={onRetry} style={{ padding: '6px 12px' }}>
-            🔄 Reintentar
-          </button>
-        </div>
-      )}
     </>
   );
 });

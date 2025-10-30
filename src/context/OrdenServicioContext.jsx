@@ -1,7 +1,9 @@
+// src/context/OrdenServicioContext.jsx
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
@@ -36,7 +38,7 @@ export function OrdenServicioProvider({
   const { ids, handleStepSubmit, handleFinalSubmit, resetClienteId } =
     useOrdenServicioWizard();
 
-  // 🧩 Logger centralizado para debugging
+  // 🧩 Logger centralizado
   const logEvent = useCallback((type, payload = null) => {
     const color =
       {
@@ -47,12 +49,49 @@ export function OrdenServicioProvider({
         ORDEN_CHANGE: 'color:#9b59b6',
         RESET_CLIENTE: 'color:#9b59b6',
         RESET_EQUIPO: 'color:#9b59b6',
+        LINEA_BLOQUEADA: 'color:#f39c12',
+        LINEA_DESBLOQUEADA: 'color:#27ae60',
       }[type] || 'color:gray';
-
     console.groupCollapsed(`%c🧩 [OrdenServicioEvent] ${type}`, color);
     if (payload) console.log('➡️ Payload:', payload);
     console.groupEnd();
   }, []);
+
+  // 🧠 Estado de bloqueos por índice
+  const [bloqueosAgregar, setBloqueosAgregar] = useState({});
+
+  const bloquearLinea = useCallback(
+    (uidOrIndex, valor = true) => {
+      setBloqueosAgregar((prev) => ({
+        ...prev,
+        [uidOrIndex]: valor,
+      }));
+      logEvent(valor ? 'LINEA_BLOQUEADA' : 'LINEA_DESBLOQUEADA', {
+        uidOrIndex,
+      });
+    },
+    [logEvent]
+  );
+
+  const isLineaBloqueada = useCallback(
+    (uidOrIndex) => !!bloqueosAgregar[uidOrIndex],
+    [bloqueosAgregar]
+  );
+
+  // 🧹 Limpieza de bloqueos obsoletos
+  useEffect(() => {
+    setBloqueosAgregar((prev) => {
+      const validIndexes = orden.lineas.map((_, i) => i);
+      const cleaned = Object.fromEntries(
+        Object.entries(prev).filter(([i]) => validIndexes.includes(Number(i)))
+      );
+      if (Object.keys(cleaned).length !== Object.keys(prev).length) {
+        console.log('🧹 Limpieza de bloqueos obsoletos:', cleaned);
+        return cleaned;
+      }
+      return prev;
+    });
+  }, [orden.lineas]);
 
   // 🔁 Reset cliente
   const resetClienteIdMemo = useCallback(() => {
@@ -91,37 +130,111 @@ export function OrdenServicioProvider({
     logEvent('RESET_EQUIPO');
   }, [logEvent]);
 
-  // ➕ Agregar línea
+  // ➕ Agregar línea (con reindexado limpio)
   const handleAgregarLinea = useCallback(() => {
     logEvent('LINEA_ADD_START');
-    setOrden((prev) => {
-      const nuevaLinea =
-        typeof defaults.createLineaServicio === 'function'
-          ? defaults.createLineaServicio()
-          : {};
-      const nueva = { _uid: crypto.randomUUID(), ...nuevaLinea };
-      const updated = { ...prev, lineas: [...prev.lineas, nueva] };
-      logEvent('LINEA_ADDED', { totalLineas: updated.lineas.length });
-      return updated;
-    });
-  }, [defaults, logEvent]);
 
-  // 🗑️ Eliminar línea (ya sin callback externo)
+    setOrden((prev) => {
+      const nuevaLinea = {
+        _uid: crypto.randomUUID(),
+        codigo: '',
+        descripcion: '',
+        cantidad: 1,
+        precioUnitario: 0,
+        subTotal: 0,
+      };
+
+      const nuevas = [...prev.lineas, nuevaLinea];
+      const total = nuevas.reduce(
+        (acc, l) => acc + (Number(l.subTotal) || 0),
+        0
+      );
+
+      // 🔒 Actualizar bloqueos según el nuevo tamaño
+      setBloqueosAgregar((prevBloqueos) => {
+        const actualizados = { ...prevBloqueos };
+
+        // Si hay más de una línea, bloquear la base
+        if (nuevas.length > 1) actualizados[0] = true;
+
+        // Asegurar que la nueva línea (última) quede desbloqueada
+        const nuevaIndex = nuevas.length - 1;
+        delete actualizados[nuevaIndex];
+
+        console.log(
+          '🔒 handleAgregarLinea → bloqueos actualizados:',
+          actualizados
+        );
+        return actualizados;
+      });
+
+      return { ...prev, lineas: nuevas, total };
+    });
+
+    logEvent('LINEA_ADDED');
+
+    if (typeof window !== 'undefined' && window.addStepToWizard) {
+      console.log('🧭 Agregando paso al wizard (intención).');
+      window.addStepToWizard?.();
+    }
+  }, [logEvent]);
+
+  // 🗑️ Eliminar línea (con reindexado garantizado)
   const handleRemoveLinea = useCallback(
     async (idx) => {
+      console.groupCollapsed(
+        `%c[handleRemoveLinea] 🔴 Eliminando línea index=${idx}`,
+        'color:#c0392b;font-weight:bold'
+      );
+      logEvent('LINEA_REMOVE_START', { index: idx });
+
       setOrden((prev) => {
         const nuevas = prev.lineas.filter((_, i) => i !== idx);
         const total = nuevas.reduce(
           (acc, l) => acc + (Number(l.subTotal) || 0),
           0
         );
+
         const updated = { ...prev, lineas: nuevas, total };
+
         logEvent('LINEA_REMOVED', {
           removedAt: idx,
           totalLineas: nuevas.length,
         });
+
+        // 🧠 Reindexar bloqueos
+        setBloqueosAgregar((prevBloqueos) => {
+          const copy = { ...prevBloqueos };
+          delete copy[idx];
+
+          const reindexed = {};
+          Object.keys(copy).forEach((key) => {
+            const oldIndex = Number(key);
+            const newIndex = oldIndex > idx ? oldIndex - 1 : oldIndex;
+            reindexed[newIndex] = copy[oldIndex];
+          });
+
+          // ✅ Desbloquear línea base si solo queda una
+          if (nuevas.length <= 1) delete reindexed[0];
+
+          console.log(
+            '🧩 handleRemoveLinea → bloqueos reindexados:',
+            reindexed
+          );
+          return reindexed;
+        });
+
         return updated;
       });
+
+      if (typeof window !== 'undefined' && window.removeStepFromWizard) {
+        const stepId = `linea-${idx + 1}`;
+        console.log(`🧭 Eliminando paso del wizard: ${stepId}`);
+        window.removeStepFromWizard(stepId);
+      }
+
+      logEvent('LINEA_DESBLOQUEADA', { index: idx });
+      console.groupEnd();
     },
     [logEvent]
   );
@@ -176,7 +289,7 @@ export function OrdenServicioProvider({
     [logEvent]
   );
 
-  // 🧠 Context value memoizado
+  // 🧠 Context memoizado
   const value = useMemo(
     () => ({
       orden,
@@ -185,6 +298,8 @@ export function OrdenServicioProvider({
       handleChangeLinea,
       handleAgregarLinea,
       handleRemoveLinea,
+      bloquearLinea,
+      isLineaBloqueada,
       ids,
       handleStepSubmit,
       handleFinalSubmit,
@@ -197,6 +312,8 @@ export function OrdenServicioProvider({
       handleChangeLinea,
       handleAgregarLinea,
       handleRemoveLinea,
+      bloquearLinea,
+      isLineaBloqueada,
       ids,
       handleStepSubmit,
       handleFinalSubmit,
@@ -204,6 +321,11 @@ export function OrdenServicioProvider({
       resetEquipoId,
     ]
   );
+
+  // 🧭 Debug visual del estado de bloqueos
+  useEffect(() => {
+    console.log('🧠 [OrdenServicioContext] Estado bloqueos:', bloqueosAgregar);
+  }, [bloqueosAgregar]);
 
   return (
     <OrdenServicioContext.Provider value={value}>

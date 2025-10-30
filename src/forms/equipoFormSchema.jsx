@@ -1,20 +1,30 @@
-export const buildEquipoFields = ({ equipo, locked, nroSerie, navigation }) => {
+// forms/equipoFormSchema.js
+export function buildEquipoFields({
+  equipo = {},
+  locked = false,
+  nroSerie,
+  navigation,
+}) {
   if (!nroSerie || !navigation) {
     console.warn('buildEquipoFields: hooks incompletos');
-    return { fields: [] };
+    return [];
   }
 
   const { state: nroSerieState, handlers: nroSerieHandlers } = nroSerie;
   const { fieldRefs, handlers: navHandlers } = navigation;
 
-  const fields = [
+  return [
     {
       name: 'nroSerie',
       type: 'autocomplete',
+
       gridColumn: '1 / 4',
+
       props: {
         label: { name: 'Nro. Serie', className: 'sr-only' },
         placeholder: 'Ej: 3BO52134Q',
+        defaultValue: equipo.nroSerie || '',
+        localEditable: true,
         value: nroSerieState.nroSerieBusqueda,
         suggestions: nroSerieState.suggestions,
         showDropdown: nroSerieState.showDropdown,
@@ -25,7 +35,6 @@ export const buildEquipoFields = ({ equipo, locked, nroSerie, navigation }) => {
         onPointerDown: nroSerieHandlers.handleNroSeriePointerDown,
         onFocus: nroSerieHandlers.handleNroSerieFocus,
         onBlur: nroSerieHandlers.handleNroSerieBlur,
-        disabled: false,
         inputRef: (el) => (fieldRefs.current['nroSerie'] = el),
         renderSuggestion: (eq) => (
           <div className="autocomplete-item">
@@ -39,59 +48,73 @@ export const buildEquipoFields = ({ equipo, locked, nroSerie, navigation }) => {
     {
       name: 'tipo',
       type: 'text',
+      label: { name: 'Tipo', className: 'sr-only' },
       placeholder: 'Ej: Laptop',
       gridColumn: '1 / 4',
-      disabled: locked,
+      defaultValue: equipo.tipo || '',
+      localEditable: !locked,
       onKeyDown: navHandlers.generic?.tipo,
       inputRef: (el) => (fieldRefs.current['tipo'] = el),
+      disabled: locked,
     },
     {
       name: 'marca',
       type: 'text',
+      label: { name: 'Marca', className: 'sr-only' },
       placeholder: 'Ej: Toshiba',
       gridColumn: '1 / 4',
-      disabled: locked,
+      defaultValue: equipo.marca || '',
+      localEditable: !locked,
       onKeyDown: navHandlers.generic?.marca,
       inputRef: (el) => (fieldRefs.current['marca'] = el),
+      disabled: locked,
     },
     {
       name: 'modelo',
       type: 'text',
+      label: { name: 'Modelo', className: 'sr-only' },
       placeholder: 'Ej: Satellite L45',
       gridColumn: '1 / 4',
-      disabled: locked,
+      defaultValue: equipo.modelo || '',
+      localEditable: !locked,
       onKeyDown: navHandlers.generic?.modelo,
       inputRef: (el) => (fieldRefs.current['modelo'] = el),
+      disabled: locked,
     },
     {
       name: 'sku',
       type: 'text',
+      label: { name: 'SKU', className: 'sr-only' },
       placeholder: 'Ej: L45B4205FL',
       gridColumn: '1 / 4',
-      disabled: locked,
+      defaultValue: equipo.sku || '',
+      localEditable: !locked,
       onKeyDown: navHandlers.generic?.sku,
       inputRef: (el) => (fieldRefs.current['sku'] = el),
+      disabled: locked,
     },
     {
       name: 'macAddress',
       type: 'text',
+      label: { name: 'MAC Address', className: 'sr-only' },
       placeholder: 'Ej: FA:KE:28:08:25:03',
       gridColumn: '1 / 4',
-      disabled: locked,
+      defaultValue: equipo.macAddress || '',
+      localEditable: !locked,
       onKeyDown: navHandlers.generic?.macAddress,
       inputRef: (el) => (fieldRefs.current['macAddress'] = el),
+      disabled: locked,
     },
     {
       name: 'especificaciones',
       type: 'checkbox',
-      className: 'fs-subtitle inline',
       label: { name: 'Agregar especificaciones de equipo' },
+      className: 'checkbox-input',
       gridColumn: '1 / 4',
-      defaultValue: false,
-      disabled: locked,
+      defaultValue: equipo.especificaciones || false,
+      localEditable: !locked,
       inputRef: (el) => (fieldRefs.current['especificaciones'] = el),
+      disabled: locked,
     },
   ];
-
-  return { fields, fieldOrder: fields.map((f) => f.name) };
-};
+}

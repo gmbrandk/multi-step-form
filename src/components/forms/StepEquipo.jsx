@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+// src/components/forms/StepEquipo.jsx
+import { useEffect, useMemo } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { buildEquipoFields } from '../../forms/equipoFormSchema';
 import { useBuscarEquipos } from '../../hooks/useBuscarEquipos';
@@ -19,14 +20,25 @@ export function StepEquipo() {
     equipos,
   });
 
-  const { fields, fieldOrder } = buildEquipoFields({
-    equipo,
-    locked: equipoForm.locked,
-    nroSerie: equipoForm.nroSerie,
-    navigation: equipoForm.navigation,
-  });
+  // 🧱 Construir campos con el nuevo esquema declarativo
+  const fields = useMemo(
+    () =>
+      buildEquipoFields({
+        equipo,
+        locked: equipoForm.locked,
+        nroSerie: equipoForm.nroSerie,
+        navigation: equipoForm.navigation,
+      }),
+    [equipo, equipoForm]
+  );
 
-  // ✅ sincronización blindada: solo actualiza si realmente cambió
+  // 🧭 Generar el orden de los campos dinámicamente
+  const fieldOrder = useMemo(
+    () => (Array.isArray(fields) ? fields.map((f) => f.name) : []),
+    [fields]
+  );
+
+  // ✅ Sincronizar el orden de navegación
   useEffect(() => {
     equipoForm.navigation.setFieldOrder(fieldOrder);
   }, [fieldOrder, equipoForm.navigation]);

@@ -1,11 +1,8 @@
-// src/forms/ordenServicioFormSchema.js
-export function buildOrdenServicioFields({
-  linea = {},
-  tiposTrabajo = [],
-  isFallback = false,
-  fallbackMessage = '',
-}) {
-  // 🧩 Construir lista única de tipos (servicio, producto, etc.)
+// forms/lineaServicioFormSchema.js
+export function buildLineaServicioFields({ linea = {}, tiposTrabajo = [] }) {
+  // 🧱 Valor por defecto si no viene del backend
+  const tipoBase = linea.tipo || 'servicio';
+
   const tiposUnicos = [...new Set(tiposTrabajo.map((t) => t.tipo))].map(
     (tipo) => ({
       value: tipo,
@@ -13,16 +10,13 @@ export function buildOrdenServicioFields({
     })
   );
 
-  // 🧩 Filtrar trabajos según el tipo seleccionado
   const trabajosFiltrados = tiposTrabajo
-    .filter((t) => t.tipo === linea.tipo)
+    .filter((t) => t.tipo === tipoBase)
     .map((t) => ({
       value: t.value,
       label: t.label,
-      precioBase: t.precioBase ?? 0,
     }));
 
-  // 🧾 Campos normales del formulario
   return [
     {
       name: 'tipo',
@@ -30,22 +24,19 @@ export function buildOrdenServicioFields({
       label: { name: 'Tipo', className: 'sr-only' },
       gridColumn: '1 / 4',
       placeholder: 'Selecciona un tipo...',
-      defaultValue: linea.tipo || 'servicio',
+      defaultValue: tipoBase, // ✅ Siempre tendrá un valor inicial
       options: tiposUnicos,
-      localEditable: false,
+      localEditable: false, // ⚠️ Depende de datos externos
     },
     {
       name: 'tipoTrabajo',
       type: 'select',
-      label: { name: 'Tipo de trabajo', className: 'sr-only' },
-      placeholder: linea.tipo
-        ? 'Selecciona un tipo de trabajo...'
-        : 'Selecciona primero un tipo...',
-      value: linea.tipoTrabajo || '',
-      options: trabajosFiltrados,
+      label: { name: 'Tipo de Trabajo', className: 'sr-only' },
       gridColumn: '1 / 4',
-      disabled: !linea.tipo,
-      localEditable: false,
+      placeholder: 'Selecciona un tipo de trabajo...',
+      defaultValue: linea.tipoTrabajo || '',
+      options: trabajosFiltrados,
+      localEditable: false, // ⚠️ Depende de datos externos
     },
     {
       name: 'descripcion',
@@ -53,15 +44,7 @@ export function buildOrdenServicioFields({
       label: { name: 'Descripción', className: 'sr-only' },
       placeholder: 'Ej: Limpieza interna y chequeo de hardware',
       gridColumn: '1 / 4',
-      localEditable: false,
-    },
-    {
-      name: 'observaciones',
-      type: 'textarea',
-      label: { name: 'Observaciones', className: 'sr-only' },
-      placeholder: 'Ej: Equipo con carcasa rallada',
-      gridColumn: '1 / 4',
-      localEditable: false,
+      localEditable: false, // ✅ editable siempre
     },
     {
       name: 'cantidad',
