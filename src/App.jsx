@@ -1,3 +1,5 @@
+window.DEBUG_WIZARD = true;
+
 import { useEffect, useState } from 'react';
 import { OrdenServicioWizard } from './components/OrdenServicioWizard';
 import { LoginForm } from './components/forms/LoginForm';

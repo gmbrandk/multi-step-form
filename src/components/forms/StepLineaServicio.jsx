@@ -1,5 +1,5 @@
 // src/components/forms/StepLineaServicio.jsx
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { useStepWizard } from '../../context/StepWizardContext';
 import { createLineaServicio } from '../../domain/createLineaServicio';
@@ -27,21 +27,21 @@ export function StepLineaServicio({ index }) {
   const bloqueado =
     index < orden.lineas.length - 1 ? true : isLineaBloqueada(index);
 
+  const [pendingNext, setPendingNext] = useState(false);
+
   useEffect(() => {
     console.groupCollapsed(
-      `%c[StepLineaServicio index=${index} → Estado botón agregar]`,
+      `%c[StepLineaServicio index=${index}]`,
       'color:#8e44ad;font-weight:bold'
     );
     console.log('🧩 Línea actual:', safeLinea);
-    console.log('📊 Total de líneas:', orden.lineas.length);
+    console.log('📊 Total líneas:', orden.lineas.length);
     console.log('🧩 Es última línea:', esUltimaLinea);
-    console.log(
-      '🚦 Estado del botón agregar:',
-      bloqueado ? '🔒 BLOQUEADO' : '🟢 HABILITADO'
-    );
+    console.log('🔒 Bloqueado:', bloqueado);
     console.groupEnd();
   }, [bloqueado, safeLinea, index, esUltimaLinea, orden.lineas.length]);
 
+  // 🧩 Cambio de campos
   const handleFieldChange = useCallback(
     (field, value) => {
       if (field === 'tipo') {
@@ -52,34 +52,50 @@ export function StepLineaServicio({ index }) {
     [index, handleChangeLinea]
   );
 
+  // ➕ Agregar nueva línea con flag pendingNext
   const handleAddLinea = useCallback(() => {
+    console.log(`[StepLineaServicio index=${index}] ➕ handleAddLinea()`);
+
     if (bloqueado) {
-      console.warn(`⚠️ Botón bloqueado, acción ignorada (index ${index}).`);
+      console.warn(`[StepLineaServicio index=${index}] 🚫 Línea bloqueada`);
       return;
     }
 
-    if (!safeLinea.tipoTrabajo) {
-      alert(
-        '⚠️ Debes seleccionar un tipo de trabajo antes de agregar otra línea.'
+    if (!linea.tipoTrabajo) {
+      alert('⚠️ Debes seleccionar un tipo de trabajo antes de continuar.');
+      return;
+    }
+
+    console.log(`[StepLineaServicio index=${index}] 🧩 Creando nueva línea...`);
+
+    try {
+      handleAgregarLinea(() => {
+        bloquearLinea(index, true);
+        console.log(
+          `[StepLineaServicio index=${index}] ✅ Línea agregada → pendingNext = true`
+        );
+        setPendingNext(true);
+      });
+    } catch (err) {
+      console.error(
+        `[StepLineaServicio index=${index}] ❌ Error al agregar línea:`,
+        err
       );
-      return;
     }
+  }, [index, bloqueado, linea.tipoTrabajo, handleAgregarLinea, bloquearLinea]);
 
-    handleAgregarLinea();
-    bloquearLinea(index, true);
-
-    setTimeout(() => {
+  // 🚀 Efecto: cuando el wizard ya tiene la nueva línea, avanzar
+  useEffect(() => {
+    if (pendingNext && orden.lineas.length > index + 1) {
+      console.log(
+        `[StepLineaServicio index=${index}] 🚀 Wizard sincronizado, ejecutando goNext()`
+      );
       goNext();
-    }, 100);
-  }, [
-    safeLinea.tipoTrabajo,
-    handleAgregarLinea,
-    bloquearLinea,
-    goNext,
-    index,
-    bloqueado,
-  ]);
+      setPendingNext(false);
+    }
+  }, [pendingNext, orden.lineas.length, index, goNext]);
 
+  // 🗑️ Eliminar línea
   const handleDeleteLinea = useCallback(async () => {
     goPrev();
     await new Promise((r) => setTimeout(r, 650));
@@ -123,7 +139,7 @@ export function StepLineaServicio({ index }) {
   console.log(
     `[Render StepLineaServicio index=${index}] bloqueado=${bloqueado} tipo=${
       safeLinea.tipo || 'N/A'
-    }`
+    } pendingNext=${pendingNext}`
   );
 
   if (!linea) {
@@ -134,7 +150,6 @@ export function StepLineaServicio({ index }) {
     );
   }
 
-  // ✅ Ya no hay FallbackPanel — el shimmer de SchemaForm cubre el estado de carga/error
   return (
     <div>
       <SchemaForm

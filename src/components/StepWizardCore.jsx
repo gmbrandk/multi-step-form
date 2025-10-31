@@ -34,6 +34,27 @@ export function StepWizardCore({
   const stepProps = currentStepConfig?.props || {};
   const current = visibleSteps[step];
 
+  console.log(
+    '[StepWizardCore] 🔄 visibleSteps:',
+    visibleSteps.map((s) => s.id)
+  );
+  console.log('[StepWizardCore] 🚶 step actual:', step);
+
+  useEffect(() => {
+    if (!window.DEBUG_WIZARD) return;
+    console.groupCollapsed(
+      '%c[DIAG ⚙️ StepWizardCore]',
+      'color:#9b59b6;font-weight:bold'
+    );
+    console.log(
+      '🧱 visibleSteps:',
+      visibleSteps.map((s) => s.id)
+    );
+    console.log('🚶 step actual:', current);
+    console.log('🔢 totalSteps:', visibleSteps.length);
+    console.groupEnd();
+  }, [visibleSteps, current]);
+
   // Auto-focus en cada step
   useEffect(() => {
     if (fieldsetRef.current) {

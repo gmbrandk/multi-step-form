@@ -1,5 +1,4 @@
-// src/components/forms/StepOrdenServicio.jsx
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useOrdenServicioContext } from '../../context/OrdenServicioContext';
 import { useStepWizard } from '../../context/StepWizardContext';
 import { createLineaServicio } from '../../domain/createLineaServicio';
@@ -22,20 +21,66 @@ export function StepOrdenServicio() {
 
   const linea = orden.lineas?.[0] || createLineaServicio();
   const form = useOrdenServicioForm({ linea, handleChangeLinea });
-
   const bloqueado = isLineaBloqueada(0);
-  const [isHover, setIsHover] = useState(false);
 
+  const [isHover, setIsHover] = useState(false);
+  const [pendingNext, setPendingNext] = useState(false); // 🚀 flag controlada
+
+  // 🧠 Diagnóstico
+  useEffect(() => {
+    if (!window.DEBUG_WIZARD) return;
+    console.groupCollapsed(
+      '%c[DIAG 🧩 StepOrdenServicio]',
+      'color:#2980b9;font-weight:bold'
+    );
+    console.log('🧾 Orden actual:', orden);
+    console.log('🔢 Total líneas:', orden.lineas?.length);
+    console.log('🔒 Bloqueado:', bloqueado);
+    console.log('🚦 Tipo trabajo:', linea.tipoTrabajo);
+    console.groupEnd();
+  }, [orden, bloqueado, linea.tipoTrabajo]);
+
+  // ➕ Acción principal con flag pendiente
   const handleAddLinea = useCallback(() => {
-    if (bloqueado) return;
+    console.log('[StepOrdenServicio] ➕ handleAddLinea()');
+
+    if (bloqueado) {
+      console.warn(
+        '[StepOrdenServicio] 🚫 Línea bloqueada, no se puede agregar'
+      );
+      return;
+    }
+
     if (!linea.tipoTrabajo) {
       alert('⚠️ Debes seleccionar un tipo de trabajo antes de continuar.');
       return;
     }
-    handleAgregarLinea();
-    bloquearLinea(0, true);
-    setTimeout(() => goNext(), 100);
-  }, [bloqueado, linea.tipoTrabajo, handleAgregarLinea, bloquearLinea, goNext]);
+
+    console.log('[StepOrdenServicio] 🧩 Iniciando creación de nueva línea...');
+
+    try {
+      handleAgregarLinea(() => {
+        bloquearLinea(0, true);
+        console.log(
+          '[StepOrdenServicio] ✅ Nueva línea agregada, pendingNext = true'
+        );
+        setPendingNext(true);
+      });
+    } catch (err) {
+      console.error('[StepOrdenServicio] ❌ Error al agregar línea:', err);
+    }
+  }, [bloqueado, linea.tipoTrabajo, handleAgregarLinea, bloquearLinea]);
+
+  // 🚀 Avanzar automáticamente cuando el wizard ya tenga el nuevo step
+  useEffect(() => {
+    if (pendingNext && orden.lineas.length > 1) {
+      console.log(
+        '[StepOrdenServicio] 🚀 Wizard sincronizado, ejecutando goNext()'
+      );
+      goNext();
+      setPendingNext(false);
+    }
+  }, [pendingNext, orden.lineas.length, goNext]);
 
   // ⚙️ Estados derivados
   const isFallback = loading;
@@ -44,15 +89,11 @@ export function StepOrdenServicio() {
 
   // 🧩 Campos del formulario
   const fields = useMemo(
-    () =>
-      buildOrdenServicioFields({
-        linea,
-        tiposTrabajo,
-      }),
+    () => buildOrdenServicioFields({ linea, tiposTrabajo }),
     [linea, tiposTrabajo]
   );
 
-  // 💅 Estilos botón principal
+  // 💅 Estilos
   const actionButtonStyle = {
     width: '180px',
     background: bloqueado ? '#95a5a6' : '#2980b9',
@@ -72,7 +113,7 @@ export function StepOrdenServicio() {
     boxShadow: '0 0 0 2px white, 0 0 0 3px #2980b9',
   };
 
-  // 🚨 Si hay error de red, mostramos un panel manual simple
+  // 🚨 Error de red
   if (isNetworkError) {
     return (
       <div
@@ -106,7 +147,14 @@ export function StepOrdenServicio() {
     );
   }
 
-  // ✅ Render principal con shimmer controlado por SchemaForm
+  // ✅ Render principal
+  console.log('[StepOrdenServicio] Render', {
+    bloqueado,
+    lineas: orden.lineas?.length,
+    tipoTrabajo: linea.tipoTrabajo,
+    pendingNext,
+  });
+
   return (
     <div>
       <SchemaForm

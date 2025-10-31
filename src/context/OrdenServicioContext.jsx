@@ -78,6 +78,21 @@ export function OrdenServicioProvider({
     [bloqueosAgregar]
   );
 
+  useEffect(() => {
+    if (!window.DEBUG_WIZARD) return;
+    console.groupCollapsed(
+      '%c[DIAG 🧠 OrdenServicioContext]',
+      'color:#16a085;font-weight:bold'
+    );
+    console.log(
+      '📋 Lineas:',
+      orden.lineas.map((l) => l._uid)
+    );
+    console.log('🔒 Bloqueos:', bloqueosAgregar);
+    console.log('💰 Total:', orden.total);
+    console.groupEnd();
+  }, [orden.lineas, bloqueosAgregar, orden.total]);
+
   // 🧹 Limpieza de bloqueos obsoletos
   useEffect(() => {
     setBloqueosAgregar((prev) => {
@@ -130,54 +145,49 @@ export function OrdenServicioProvider({
     logEvent('RESET_EQUIPO');
   }, [logEvent]);
 
-  // ➕ Agregar línea (con reindexado limpio)
-  const handleAgregarLinea = useCallback(() => {
-    logEvent('LINEA_ADD_START');
+  // ➕ Agregar línea (callback opcional)
+  const handleAgregarLinea = useCallback(
+    (callback) => {
+      logEvent('LINEA_ADD_START');
 
-    setOrden((prev) => {
-      const nuevaLinea = {
-        _uid: crypto.randomUUID(),
-        codigo: '',
-        descripcion: '',
-        cantidad: 1,
-        precioUnitario: 0,
-        subTotal: 0,
-      };
+      setOrden((prev) => {
+        const nuevaLinea = {
+          _uid: crypto.randomUUID(),
+          codigo: '',
+          descripcion: '',
+          cantidad: 1,
+          precioUnitario: 0,
+          subTotal: 0,
+        };
 
-      const nuevas = [...prev.lineas, nuevaLinea];
-      const total = nuevas.reduce(
-        (acc, l) => acc + (Number(l.subTotal) || 0),
-        0
-      );
-
-      // 🔒 Actualizar bloqueos según el nuevo tamaño
-      setBloqueosAgregar((prevBloqueos) => {
-        const actualizados = { ...prevBloqueos };
-
-        // Si hay más de una línea, bloquear la base
-        if (nuevas.length > 1) actualizados[0] = true;
-
-        // Asegurar que la nueva línea (última) quede desbloqueada
-        const nuevaIndex = nuevas.length - 1;
-        delete actualizados[nuevaIndex];
-
-        console.log(
-          '🔒 handleAgregarLinea → bloqueos actualizados:',
-          actualizados
+        const nuevas = [...prev.lineas, nuevaLinea];
+        const total = nuevas.reduce(
+          (acc, l) => acc + (Number(l.subTotal) || 0),
+          0
         );
-        return actualizados;
+
+        setBloqueosAgregar((prevBloqueos) => {
+          const actualizados = { ...prevBloqueos };
+          if (nuevas.length > 1) actualizados[0] = true;
+          delete actualizados[nuevas.length - 1];
+          return actualizados;
+        });
+
+        return { ...prev, lineas: nuevas, total };
       });
 
-      return { ...prev, lineas: nuevas, total };
-    });
+      logEvent('LINEA_ADDED');
 
-    logEvent('LINEA_ADDED');
+      // 🧭 Forzar actualización de steps dinámicos en el wizard
+      if (typeof window !== 'undefined' && window.addStepToWizard) {
+        window.addStepToWizard?.();
+      }
 
-    if (typeof window !== 'undefined' && window.addStepToWizard) {
-      console.log('🧭 Agregando paso al wizard (intención).');
-      window.addStepToWizard?.();
-    }
-  }, [logEvent]);
+      // Ejecutar callback después del render
+      if (typeof callback === 'function') setTimeout(callback, 0);
+    },
+    [logEvent]
+  );
 
   // 🗑️ Eliminar línea (con reindexado garantizado)
   const handleRemoveLinea = useCallback(
